@@ -155,9 +155,9 @@
   .pupil-decor{display:none;position:absolute;z-index:1;pointer-events:none;user-select:none}
   #room.pupil-view .pupil-decor{display:block}
   .cartoon-plant{width:72px;height:94px;filter:drop-shadow(0 5px 3px rgba(89,55,20,.16))}
-  .plant-a{left:12px;bottom:12px;transform:rotate(-5deg) scale(1.00);transform-origin:left bottom}
-  .plant-b{right:12px;top:48px;transform:rotate(5deg) scale(.88);transform-origin:right top}
-  .plant-c{right:12px;bottom:12px;transform:rotate(5deg) scale(1.02);transform-origin:right bottom}
+  .plant-a{left:var(--plant-edge,12px);bottom:var(--plant-edge,12px);transform:rotate(-5deg) scale(var(--plant-scale-a,1));transform-origin:left bottom}
+  .plant-b{right:var(--plant-edge,12px);top:var(--plant-top,48px);transform:rotate(5deg) scale(var(--plant-scale-b,.88));transform-origin:right top}
+  .plant-c{right:var(--plant-edge,12px);bottom:var(--plant-edge,12px);transform:rotate(5deg) scale(var(--plant-scale-c,1.02));transform-origin:right bottom}
   .pupil-decor.hidden-by-desk{display:none!important}
   .cartoon-pot{
     position:absolute;left:16px;bottom:0;width:42px;height:34px;
@@ -454,7 +454,7 @@
     .topbar{grid-template-columns:70px minmax(0,1fr);gap:6px;padding:4px 6px}
     .brand-logo{display:none}
     .brand-compact{display:flex;width:70px;height:57px;flex-direction:column;align-items:center;justify-content:center;gap:1px;overflow:hidden}
-    .brand-compact-icon{display:block;flex:0 0 41px;width:66px;height:41px;background:url("./deskbuddy-logo.png") no-repeat -8px -12px / 210px auto}
+    .brand-compact-icon{display:block;flex:0 0 41px;width:61px;height:41px;background:url("./deskbuddy-logo.png") no-repeat -8px -12px / 210px auto}
     .brand-compact-word{display:block;flex:0 0 13px;font-weight:900;font-size:12px;line-height:13px;letter-spacing:-.3px;white-space:nowrap}
     .brand-compact-word .desk-word{color:#243650}
     .brand-compact-word .buddy-word{color:#2f80ed}
@@ -749,6 +749,13 @@
     room.style.backgroundSize=cellW+'px '+cellH+'px';
     room.style.backgroundPosition=(-roomCamera.left/roomCamera.width*rr.width)+'px '+(-roomCamera.top/roomCamera.height*rr.height)+'px';
     room.classList.toggle('room-zoomed-out',roomCamera.zoom<.8);
+    // Follow rendered desk scale across phone widths and camera zoom.
+    const plantScale=clamp(rr.width/roomCamera.width,.12,1.3);
+    room.style.setProperty('--plant-scale-a',plantScale.toFixed(4));
+    room.style.setProperty('--plant-scale-b',(plantScale*.88).toFixed(4));
+    room.style.setProperty('--plant-scale-c',(plantScale*1.02).toFixed(4));
+    room.style.setProperty('--plant-edge',Math.max(2,plantScale*12).toFixed(1)+'px');
+    room.style.setProperty('--plant-top',Math.max(7,plantScale*48).toFixed(1)+'px');
     updateZoomControls();
     requestAnimationFrame(fitAllSeatContents);
     if(state.viewMode==='pupil') requestAnimationFrame(updatePupilDecorVisibility);
@@ -1230,7 +1237,7 @@
     if(state.viewMode!=='pupil') return;
 
     const obstacles=[...room.querySelectorAll('.seat'),$('teacherDesk')].filter(Boolean);
-    const gap=8;
+    const gap=8*clamp(room.getBoundingClientRect().width/roomCamera.width,.12,1.3);
     for(const plant of plants){
       const pr=plant.getBoundingClientRect();
       const blocked=obstacles.some(el=>{
