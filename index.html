@@ -71,6 +71,9 @@
   .room-dimensions label{display:flex;flex-direction:column;gap:5px;font-size:12px;color:#475467;font-weight:700}
   .room-dimensions .input{min-width:0}
   .input,select{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 9px;background:#fff;color:#101828}
+  .room-dimensions .input,#gridSize{height:38px;box-sizing:border-box;line-height:normal;font-size:13px}
+  .room-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:8px}
+  .room-actions .btn{min-width:0;padding:8px 3px;font-size:11px;white-space:nowrap}
   .check-row{display:flex;align-items:center;gap:8px;margin:7px 0;font-size:13px}
   .muted{color:var(--muted);font-size:12px}
   .room-shell{min-width:760px;max-width:1220px;margin:0 auto}
@@ -177,8 +180,17 @@
     background:linear-gradient(180deg,#fffaf1 0%,#f6e2c0 100%);
     border:3px solid #33261f;border-radius:12px;
     box-shadow:inset 0 -4px rgba(196,149,88,.14),0 4px 5px rgba(82,53,27,.10);
+    transform:perspective(240px) rotateX(20deg);
+    transform-origin:center bottom;
     z-index:4;
   }
+  /* Keep names horizontal: the tabletop tilts, but this text layer does not. */
+  #room.pupil-view .pupil-desk-name{
+    position:absolute;left:5%;right:5%;top:11%;height:54%;
+    display:flex;align-items:center;justify-content:center;
+    pointer-events:none;z-index:5;
+  }
+  #room.pupil-view .pupil-desk-name .seat-name{max-height:100%}
   #room.pupil-view .pupil-desk-apron{
     display:block;position:absolute;left:8%;right:8%;top:61%;height:25%;
     background:var(--desk-color,#ff5f68);
@@ -198,7 +210,7 @@
   #room.pupil-view .pupil-desk-leg.right{right:12%}
   #room.pupil-view .seat-name{
     position:static;z-index:auto;height:auto;padding:0;min-width:0;max-width:100%;
-    color:#192a43;font-size:clamp(11px,1.25vw,16px);font-weight:900;
+    color:#192a43;font-size:14px;font-weight:900;
     text-shadow:0 1px 0 rgba(255,255,255,.75);
   }
   #room.pupil-view .desk{
@@ -240,7 +252,7 @@
     cursor:grab;
   }
   .seat.selected{outline:4px solid rgba(36,87,214,.26);outline-offset:2px}
-  .seat-name{font-weight:800;text-align:center;font-size:16px;padding:4px 4px 2px;line-height:1.08;white-space:nowrap;overflow:hidden;flex:0 0 auto;max-height:48%}
+  .seat-name{font-weight:800;text-align:center;font-size:14px;padding:4px 4px 2px;line-height:1.08;white-space:nowrap;overflow:hidden;flex:0 0 auto;max-height:48%}
   .seat-name.name-wrap{white-space:normal;overflow-wrap:anywhere;text-overflow:clip;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2}
   .seat.empty .seat-name{color:#98a2b3;font-style:italic;font-weight:650}
   .seat-fields{padding:0 5px 1px;display:flex;flex-direction:column;justify-content:space-evenly;gap:0;flex:1 1 auto;min-height:0;overflow:hidden}
@@ -290,6 +302,7 @@
   .key-title{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px}
   .key-toggle{width:26px;height:26px;min-width:26px;padding:0;border:1px solid #d0d5dd;border-radius:6px;background:#fff;color:#344054;font-weight:900;line-height:1;display:grid;place-items:center;cursor:pointer}
   .key-toggle:hover{background:#f2f4f7}
+  .key-toggle svg{width:14px;height:14px;display:block;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
   .key-help{width:100%;font-size:8.5px;color:#667085;line-height:1.25;margin:0 0 5px;white-space:normal}
   .key-item{position:relative;display:flex;align-items:center;gap:6px;width:max-content;font-size:10px;color:#344054;margin:2px 0;line-height:1.1;padding:3px 4px;border-radius:5px;cursor:pointer;user-select:none;white-space:nowrap;transition:background .15s,box-shadow .15s,opacity .15s}
   .key-item:hover{background:#f2f4f7}
@@ -458,7 +471,7 @@
             <option value="30">Large (30)</option>
             <option value="40">Extra large (40)</option>
           </select>
-          <div class="button-row" style="margin-top:8px">
+          <div class="room-actions">
             <button class="btn" id="autoArrangeBtn">Auto arrange desks</button>
             <button class="btn" id="resetDeskBtn">Reset teacher desk</button>
           </div>
@@ -821,7 +834,7 @@
 
       const name = String(seat.data.Name || '').trim();
       if(isPupil){
-        el.innerHTML = `<div class="pupil-chair" aria-hidden="true"><span class="chair-face">•‿•</span></div><div class="pupil-desk-apron" aria-hidden="true"></div><div class="pupil-desk-leg left" aria-hidden="true"></div><div class="pupil-desk-leg right" aria-hidden="true"></div><div class="pupil-desk-top"><div class="seat-name" title="${escHtml(name)}">${escHtml(name)}</div></div>`;
+        el.innerHTML = `<div class="pupil-chair" aria-hidden="true"><span class="chair-face">•‿•</span></div><div class="pupil-desk-apron" aria-hidden="true"></div><div class="pupil-desk-leg left" aria-hidden="true"></div><div class="pupil-desk-leg right" aria-hidden="true"></div><div class="pupil-desk-top"></div><div class="pupil-desk-name"><div class="seat-name" title="${escHtml(name)}">${escHtml(name)}</div></div>`;
       }else{
         const fields = state.displayFields.filter(f => f !== 'Name' && state.columns.includes(f));
         const body = fields.map(f => {
@@ -829,8 +842,12 @@
           return `<div class="seat-field" title="${escHtml(f+': '+val)}">${state.showFieldLabels ? `<b>${escHtml(f)}:</b> ` : ''}${escHtml(val)}</div>`;
         }).join('');
         const band = matches.length
-          ? matches.map(r => `<div class="colour-segment" style="background:${escHtml(r.color)}" title="${escHtml(ruleLabel(r))}"></div>`).join('')
-          : '<div class="colour-segment" style="background:#e4e7ec"></div>';
+          ? matches.map(r => {
+              const val=String(seat.data[r.field] ?? '').trim() || '(blank)';
+              const description=r.field+': '+val;
+              return `<div class="colour-segment" style="background:${escHtml(r.color)}" title="${escHtml(description)}" role="img" aria-label="${escHtml(description)}"></div>`;
+            }).join('')
+          : '<div class="colour-segment" style="background:#e4e7ec" title="No colour conditions matched" role="img" aria-label="No colour conditions matched"></div>';
         el.innerHTML = `<div class="seat-name" title="${escHtml(name||'Empty desk')}">${escHtml(name || 'Empty desk')}</div><div class="seat-fields${fields.length>3?' dense-fields':''}">${body}</div><div class="colour-band">${band}</div>`;
       }
       room.appendChild(el);
@@ -860,7 +877,7 @@
       if(!name) continue;
       // Shrink a single-line name to 8pt before trying a two-line wrap.
       name.classList.remove('name-wrap');
-      let size=16;
+      let size=14;
       name.style.fontSize=size+'px';
       while(size>10.667 && name.scrollWidth>name.clientWidth+1){
         size=Math.max(10.667,size-.5);
@@ -968,7 +985,7 @@
     key.style.setProperty('--preview-height',(36+active.length*31)+'px');
 
     if(state.keyCollapsed){
-      key.innerHTML=`<div class="key-header"><button class="key-toggle" data-key-toggle title="${keyPreview?'Expand key fully':'Preview key'}" aria-label="${keyPreview?'Expand key fully':'Preview key'}" aria-expanded="${keyPreview?'true':'false'}">+</button></div>`+
+      key.innerHTML=`<div class="key-header"><button class="key-toggle" data-key-toggle title="${keyPreview?'Expand key fully':'Preview key'}" aria-label="${keyPreview?'Expand key fully':'Preview key'}" aria-expanded="${keyPreview?'true':'false'}"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M7 1v12M1 7h12"/></svg></button></div>`+
         active.map(r=>`<div class="key-item ${activeRuleIds.has(r.id)?'active':''}" data-key-rule="${escHtml(r.id)}" title="${escHtml(ruleLabel(r))}" aria-hidden="${!keyPreview}"><span class="swatch" style="background:${escHtml(r.color)}"></span><span class="key-label">${escHtml(ruleLabel(r))}</span></div>`).join('');
       key.style.width='36px';
       return;
