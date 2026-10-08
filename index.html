@@ -1636,7 +1636,8 @@
     }else{
       rules.forEach(rule=>{
         const label=ruleLabel(rule);
-        const width=Math.min(108,Math.max(29,Math.ceil(14+label.length*2.2)));
+        const availableWidth=LAST_COL-(ROOM_COL+18)+1;
+        const width=Math.min(availableWidth,Math.min(108,Math.max(29,Math.ceil(14+label.length*2.2))));
         if(keyX+width-1>LAST_COL){
           keyX=ROOM_COL+18;
           keyY+=7;
