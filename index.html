@@ -130,7 +130,9 @@
   #room.plan-locked > *{pointer-events:none}
   /* The colour key must remain usable for filtering even in read-only mode. */
   #room.plan-locked > .key{pointer-events:auto}
-  #room.plan-locked .seat,#room.plan-locked .desk{touch-action:auto;cursor:default}
+  /* Read-only desks accept taps without preventing page scrolling. */
+  #room.plan-locked > .seat{pointer-events:auto;touch-action:pan-x pan-y;cursor:help}
+  #room.plan-locked .desk{touch-action:auto;cursor:default}
   #room.pupil-view{
     background:#f2cd91;
     border-color:#e2a33b;
@@ -225,7 +227,7 @@
   }
   #room.pupil-view .pupil-desk-name .seat-name{max-height:100%;font-weight:750}
   /* A single, legible given name beats clipped overlapping lines on phones. */
-  #room.pupil-view .pupil-desk-name.pupil-short-name{align-items:flex-start}
+  #room.pupil-view .pupil-desk-name.pupil-short-name{align-items:center}
   #room.pupil-view .pupil-desk-name.pupil-short-name .seat-name{
     white-space:nowrap;display:block;overflow:hidden;text-overflow:ellipsis;
     font-weight:700;max-height:100%;
@@ -411,6 +413,27 @@
   .hidden{display:none!important}
   .toast{position:fixed;right:18px;bottom:18px;z-index:1000;background:#101828;color:#fff;border-radius:9px;padding:10px 12px;box-shadow:0 8px 24px rgba(0,0,0,.18);font-size:13px;opacity:0;transform:translateY(8px);pointer-events:none;transition:.2s}
   .toast.show{opacity:1;transform:translateY(0)}
+  .locked-seat-tooltip{
+    position:fixed;z-index:1200;box-sizing:border-box;
+    width:max-content;min-width:min(205px,calc(100vw - 20px));
+    max-width:min(275px,calc(100vw - 20px));
+    max-height:calc(100dvh - 20px);overflow:auto;overscroll-behavior:contain;
+    touch-action:pan-y;
+    padding:11px 12px;border:1px solid #bbc6d7;border-radius:12px;
+    background:rgba(255,255,255,.98);color:#253650;
+    box-shadow:0 12px 34px rgba(16,24,40,.24);
+    font:12px/1.35 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    text-align:left;
+  }
+  .locked-seat-tooltip[hidden]{display:none!important}
+  .locked-seat-tooltip-name{font-size:14px;font-weight:800;overflow-wrap:anywhere;border-bottom:1px solid #e4e7ec;padding-bottom:7px;margin-bottom:7px}
+  .locked-seat-tooltip-fields{display:flex;flex-direction:column;gap:5px}
+  .locked-seat-tooltip-row{display:flex;align-items:flex-start;gap:8px;min-width:0}
+  .locked-seat-tooltip-swatch{box-sizing:border-box;flex:0 0 4px;width:4px;height:1.35em;margin-top:1px;border-radius:2px;border:1px solid #c8d0dc;background:transparent}
+  .locked-seat-tooltip-swatch.matched{border-color:transparent}
+  .locked-seat-tooltip-value{min-width:0;overflow-wrap:anywhere}
+  .locked-seat-tooltip-value b{font-weight:750}
+  @media print{.locked-seat-tooltip{display:none!important}}
   @media(max-width:950px){
     .topbar{grid-template-columns:minmax(125px,1fr) auto;gap:8px;padding:5px 9px}
     .brand-logo{max-height:60px}
@@ -602,6 +625,7 @@
   </div>
 </div>
 <div class="toast" id="toast"></div>
+<div id="lockedSeatTooltip" class="locked-seat-tooltip" role="tooltip" hidden></div>
 
 <script>
 (() => {
@@ -632,6 +656,10 @@
   let keyPreview = false;
   let drag = null;
   let draftTimer = null;
+  let lockedTipSeatId = null;
+  let lockedTipPinned = false;
+  let lastRoomPointerType = 'mouse';
+  let touchTipStart = null;
   // View preference only: locking never changes the saved seating plan.
   // Start locked on phones so touch-scrolling works immediately.
   let planLocked = window.matchMedia('(max-width:640px)').matches;
@@ -740,7 +768,60 @@
   function togglePlanLock(){
     if(drag) endDrag();
     planLocked=!planLocked;
-    syncPlanLock();
+    hideLockedSeatTip();
+    renderRoom();
+  }
+
+  function hideLockedSeatTip(){
+    const tip=$('lockedSeatTooltip');
+    tip.hidden=true;
+    lockedTipSeatId=null;
+    lockedTipPinned=false;
+    $('room').querySelectorAll('[aria-describedby="lockedSeatTooltip"]').forEach(el=>el.removeAttribute('aria-describedby'));
+  }
+
+  function positionLockedSeatTip(seatEl){
+    const tip=$('lockedSeatTooltip');
+    if(tip.hidden || !seatEl)return;
+    const rect=seatEl.getBoundingClientRect();
+    const vw=document.documentElement.clientWidth,vh=window.innerHeight,margin=9,gap=10;
+    const tw=tip.offsetWidth,th=tip.offsetHeight;
+    let left;
+    if(rect.right+gap+tw<=vw-margin)left=rect.right+gap;
+    else if(rect.left-gap-tw>=margin)left=rect.left-gap-tw;
+    else left=clamp(rect.left+rect.width/2-tw/2,margin,Math.max(margin,vw-margin-tw));
+    let top=rect.top;
+    if(top+th>vh-margin)top=rect.bottom+gap+th<=vh-margin?rect.bottom+gap:rect.top-th-gap;
+    tip.style.left=Math.round(left)+'px';
+    tip.style.top=Math.round(clamp(top,margin,Math.max(margin,vh-margin-th)))+'px';
+  }
+
+  function showLockedSeatTip(el,pinned=false){
+    if(!planLocked || !el)return;
+    const seat=state.seats.find(s=>s.id===el.dataset.id);
+    if(!seat)return;
+    const tip=$('lockedSeatTooltip'),rules=matchingRules(seat);
+    // Include every column, even those not currently visible on the desk.
+    const rows=state.columns.filter(field=>field!=='Name').map(field=>{
+      const matched=rules.find(rule=>rule.field===field);
+      const style=matched?' style="background:'+escHtml(matched.color)+'"':'';
+      const value=seat.data[field]==null?'':String(seat.data[field]);
+      return '<div class="locked-seat-tooltip-row"><span class="locked-seat-tooltip-swatch '+(matched?'matched':'')+'"'+style+' aria-hidden="true"></span><span class="locked-seat-tooltip-value"><b>'+escHtml(field)+':</b> '+(value.trim()?escHtml(value):'—')+'</span></div>';
+    }).join('');
+    tip.innerHTML='<div class="locked-seat-tooltip-name">'+escHtml(String(seat.data.Name||'').trim()||'Empty desk')+'</div>'+
+      (rows?'<div class="locked-seat-tooltip-fields">'+rows+'</div>':'');
+    tip.hidden=false;
+    lockedTipSeatId=seat.id;
+    lockedTipPinned=pinned;
+    $('room').querySelectorAll('[aria-describedby="lockedSeatTooltip"]').forEach(node=>node.removeAttribute('aria-describedby'));
+    el.setAttribute('aria-describedby','lockedSeatTooltip');
+    positionLockedSeatTip(el);
+  }
+
+  function clearSelectedSeat(){
+    if(!selectedSeatId)return;
+    selectedSeatId=null;
+    $('room').querySelectorAll('.seat.selected').forEach(node=>node.classList.remove('selected'));
   }
 
   function updateDocumentTitle(){
@@ -948,6 +1029,7 @@
   }
 
   function renderRoom(){
+    hideLockedSeatTip();
     const enabledRuleIds = new Set(state.rules.filter(r => r.enabled).map(r => r.id));
     activeRuleIds = new Set([...activeRuleIds].filter(id => enabledRuleIds.has(id)));
     const room = $('room');
@@ -982,6 +1064,8 @@
       const dimmed = !isPupil && activeRuleIds.size > 0 && ![...activeRuleIds].every(id => matchIds.has(id));
       el.className = 'seat' + (seat.id === selectedSeatId ? ' selected' : '') + (!String(seat.data.Name || '').trim() ? ' empty' : '') + (dimmed ? ' key-dimmed' : '');
       el.dataset.id = seat.id;
+      el.tabIndex=planLocked?0:-1;
+      if(planLocked)el.setAttribute('aria-label',String(seat.data.Name||'').trim()||'Empty desk');
       el.style.left = (seat.x / ROOM_W * 100) + '%';
       el.style.top = (seat.y / ROOM_H * 100) + '%';
       el.style.width=(SEAT_W/ROOM_W*100)+'%';
@@ -1009,6 +1093,7 @@
           : '<div class="colour-segment" style="background:#e4e7ec" title="No colour conditions matched" role="img" aria-label="No colour conditions matched"></div>';
         el.innerHTML = `<div class="seat-name" title="${escHtml(name||'Empty desk')}">${escHtml(name || 'Empty desk')}</div><div class="seat-fields${fields.length>3?' dense-fields':''}">${body}</div><div class="colour-band">${band}</div>`;
       }
+      if(planLocked)el.querySelectorAll('[title]').forEach(child=>child.removeAttribute('title'));
       room.appendChild(el);
     });
 
@@ -2134,16 +2219,78 @@
   });
 
   $('room').addEventListener('pointerdown',e=>{
-    if(planLocked) return;
-    if(e.target.closest('.teacher-rotate,.teacher-pen-pot')) return;
-    const seat=e.target.closest('.seat'); if(seat){startDrag(e,'seat',seat.dataset.id);return;}
-    const desk=e.target.closest('.desk'); if(desk){startDrag(e,'desk');}
+    lastRoomPointerType=e.pointerType||'mouse';
+    if(planLocked){
+      if(e.pointerType==='touch')touchTipStart={x:e.clientX,y:e.clientY,moved:false};
+      return;
+    }
+    if(e.target.closest('.teacher-rotate,.teacher-pen-pot'))return;
+    const seat=e.target.closest('.seat');
+    if(seat){startDrag(e,'seat',seat.dataset.id);return;}
+    const desk=e.target.closest('.desk');if(desk)startDrag(e,'desk');
+  });
+  $('room').addEventListener('pointermove',e=>{
+    if(planLocked && touchTipStart && e.pointerType==='touch' &&
+       Math.hypot(e.clientX-touchTipStart.x,e.clientY-touchTipStart.y)>8){
+      touchTipStart.moved=true;
+      hideLockedSeatTip();
+    }
+  });
+  $('room').addEventListener('pointercancel',()=>{touchTipStart=null;});
+  $('room').addEventListener('pointerover',e=>{
+    if(!planLocked || (e.pointerType!=='mouse' && e.pointerType!=='pen'))return;
+    const seat=e.target.closest('.seat');
+    if(!seat || (e.relatedTarget && seat.contains(e.relatedTarget)))return;
+    showLockedSeatTip(seat,false);
+  });
+  $('room').addEventListener('pointerout',e=>{
+    if(!planLocked || lockedTipPinned || (e.pointerType!=='mouse' && e.pointerType!=='pen'))return;
+    const seat=e.target.closest('.seat');
+    if(!seat || (e.relatedTarget && (seat.contains(e.relatedTarget)||$('lockedSeatTooltip').contains(e.relatedTarget))))return;
+    hideLockedSeatTip();
+  });
+  $('lockedSeatTooltip').addEventListener('pointerleave',e=>{
+    if(lockedTipPinned || (e.pointerType!=='mouse' && e.pointerType!=='pen'))return;
+    const next=e.relatedTarget?.closest?.('.seat');
+    if(!next || next.dataset.id!==lockedTipSeatId)hideLockedSeatTip();
   });
   $('room').addEventListener('click',e=>{
-    if(planLocked) return;
+    const seat=e.target.closest('.seat');
+    if(planLocked){
+      if(seat){
+        if(touchTipStart?.moved){touchTipStart=null;return;}
+        if(lastRoomPointerType!=='mouse'||e.detail===0){
+          if(lockedTipSeatId===seat.dataset.id && lockedTipPinned)hideLockedSeatTip();
+          else showLockedSeatTip(seat,true);
+        }
+      }else if(!e.target.closest('.key')){
+        hideLockedSeatTip();
+        clearSelectedSeat();
+      }
+      touchTipStart=null;
+      return;
+    }
     const rotate=e.target.closest('.teacher-rotate,.teacher-pen-pot');
-    if(rotate){e.stopPropagation();rotateTeacherDesk();}
+    if(rotate){e.stopPropagation();rotateTeacherDesk();return;}
+    if(!seat && !e.target.closest('.desk,.key'))clearSelectedSeat();
   });
+  $('room').addEventListener('keydown',e=>{
+    if(e.key==='Escape'){hideLockedSeatTip();return;}
+    if(planLocked && e.target.matches('.seat') && (e.key==='Enter'||e.key===' ')){
+      e.preventDefault();
+      if(lockedTipSeatId===e.target.dataset.id&&lockedTipPinned)hideLockedSeatTip();
+      else showLockedSeatTip(e.target,true);
+    }
+  });
+  document.addEventListener('pointerdown',e=>{
+    if(!e.target.closest('#room,#lockedSeatTooltip'))hideLockedSeatTip();
+  });
+  window.addEventListener('scroll',e=>{
+    // Long pupil details may scroll inside the tooltip without closing it.
+    if(e.target===$('lockedSeatTooltip') || $('lockedSeatTooltip').contains(e.target))return;
+    hideLockedSeatTip();
+  },true);
+  window.addEventListener('resize',hideLockedSeatTip);
   window.addEventListener('pointermove',moveDrag);
   window.addEventListener('pointerup',endDrag);
   window.addEventListener('pointercancel',endDrag);
