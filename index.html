@@ -1469,7 +1469,9 @@
   // matching rule receives a proportional, independently editable colour strip.
   function visualExcelSheet(styles){
     const UNIT=5, ROOM_COL=2, ROOM_ROW=10, ROOM_COLS=ROOM_W/UNIT, ROOM_ROWS=ROOM_H/UNIT;
-    const KEY_COL=ROOM_COL+ROOM_COLS+5, LAST_COL=KEY_COL+47, LAST_ROW=ROOM_ROW+ROOM_ROWS-1;
+    const LAST_COL=ROOM_COL+ROOM_COLS-1, ROOM_BOTTOM=ROOM_ROW+ROOM_ROWS-1;
+    const KEY_ROW=ROOM_BOTTOM+3;
+    let LAST_ROW=KEY_ROW+6;
     const cells=new Map(),merges=[];
     function put(row,col,value,styleId){
       if(row<1||col<1) return;
@@ -1496,7 +1498,7 @@
       {size:10,fg:'#667085',align:'left'});
     for(let x=0;x<ROOM_COLS;x++){
       put(ROOM_ROW,ROOM_COL+x,undefined,styles.style({edge:4}));
-      put(LAST_ROW,ROOM_COL+x,undefined,styles.style({edge:8}));
+      put(ROOM_BOTTOM,ROOM_COL+x,undefined,styles.style({edge:8}));
     }
     for(let y=0;y<ROOM_ROWS;y++){
       put(ROOM_ROW+y,ROOM_COL,undefined,styles.style({edge:1}));
@@ -1535,24 +1537,30 @@
     merge(tx,ty,tr,tb,'Teacher desk',
       {size:13,fg:'#FFFFFF',bold:true,bg:'#26384F',rotate:state.desk.orientation==='vertical'?90:0,outline:true});
 
-    // The key occupies a dedicated strip beside the plan, so it cannot hide
-    // any desks, even when the browser key is expanded over the room.
-    merge(KEY_COL,ROOM_ROW+2,LAST_COL-1,ROOM_ROW+9,'KEY',
-      {size:14,fg:'#26384F',bold:true,bg:'#E9F0FF',align:'left'});
+    // Compact, horizontally packed key BELOW the plan in Excel printouts.
+    // Labels remain editable, and wrap to the next line only if needed.
     const rules=state.rules.filter(r=>r.enabled);
+    merge(ROOM_COL,KEY_ROW,ROOM_COL+15,KEY_ROW+5,'KEY',
+      {size:12,fg:'#26384F',bold:true,align:'left'});
+    let keyX=ROOM_COL+18, keyY=KEY_ROW;
     if(!rules.length){
-      merge(KEY_COL+2,ROOM_ROW+15,LAST_COL-2,ROOM_ROW+20,'No colour rules',
+      merge(keyX,keyY,keyX+55,keyY+5,'No colour rules',
         {size:10,fg:'#98A2B3',align:'left'});
     }else{
-      const step=Math.max(1,Math.min(9,Math.floor((ROOM_ROWS-20)/rules.length)));
-      rules.forEach((rule,i)=>{
-        const top=ROOM_ROW+15+i*step;
-        const bottom=top+Math.max(0,step-2);
-        paint(KEY_COL+2,top,KEY_COL+7,bottom,{bg:rule.color});
-        merge(KEY_COL+10,top,LAST_COL-2,bottom,ruleLabel(rule),
-          {size:step<4?8:11,fg:'#344054',align:'left',wrap:false});
+      rules.forEach(rule=>{
+        const label=ruleLabel(rule);
+        const width=Math.min(108,Math.max(29,Math.ceil(14+label.length*2.2)));
+        if(keyX+width-1>LAST_COL){
+          keyX=ROOM_COL+18;
+          keyY+=7;
+        }
+        paint(keyX,keyY,keyX+6,keyY+4,{bg:rule.color,outline:true});
+        merge(keyX+9,keyY,keyX+width-1,keyY+4,label,
+          {size:10,fg:'#344054',align:'left',wrap:true});
+        keyX+=width+4;
       });
     }
+    LAST_ROW=Math.max(LAST_ROW,keyY+6);
 
     const allRows=[...cells.keys()].sort((a,b)=>a-b);
     let xml='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
