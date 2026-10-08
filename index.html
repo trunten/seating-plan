@@ -480,12 +480,16 @@
     .topbar,.sidebar,.room-header .view-switch,.toast{display:none!important}
     .workspace,.main{display:block!important;padding:0!important;margin:0!important;overflow:visible!important}
     .room-shell{display:flex!important;flex-direction:column!important;width:100%!important;height:198mm!important;max-width:none!important;min-width:0!important;margin:0!important}
-    .room-header{flex:0 0 6mm!important;margin:0 0 1.5mm!important;height:6mm!important}
-    .room-title{font-size:13pt!important}
+    /* Share the header with the colour key rather than adding a new print row.
+       Allow a longer key to wrap inside the header, reducing the plan's flex
+       height instead of pushing an extra section onto another sheet. */
+    .room-header{display:flex!important;flex:0 0 auto!important;align-items:center!important;gap:3mm!important;min-height:6mm!important;height:auto!important;margin:0 0 1.5mm!important}
+    .room-title{font-size:13pt!important;min-width:0;flex:0 1 auto}
+    .room-header .print-key{display:flex!important;flex:1 1 auto!important;min-width:0;max-width:72%;justify-content:flex-end;align-items:center;align-content:center;flex-wrap:wrap;column-gap:2.5mm;row-gap:.7mm;padding:0!important;margin:0!important;print-color-adjust:exact;-webkit-print-color-adjust:exact}
     #room{width:100%!important;height:auto!important;min-height:0!important;flex:1 1 0!important;aspect-ratio:auto!important;border:1px solid #666!important;border-radius:0!important;box-shadow:none!important;print-color-adjust:exact;-webkit-print-color-adjust:exact}
     #room .key{display:none!important}
-    .print-key{display:flex!important;flex:0 0 auto!important;flex-wrap:wrap;align-content:flex-start;align-items:center;column-gap:5mm;row-gap:1mm;padding:2mm 1mm 0!important;print-color-adjust:exact;-webkit-print-color-adjust:exact}
-    .print-key-item,.print-key-swatch{print-color-adjust:exact;-webkit-print-color-adjust:exact}
+    .print-key-item{font-size:8pt;white-space:nowrap;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+    .print-key-swatch{width:4mm;height:2mm;print-color-adjust:exact;-webkit-print-color-adjust:exact}
     .seat{box-shadow:none!important;print-color-adjust:exact;-webkit-print-color-adjust:exact}
     .seat.key-dimmed{opacity:1!important;filter:none!important}
     .desk,.colour-band,.colour-segment{print-color-adjust:exact;-webkit-print-color-adjust:exact}
@@ -610,6 +614,7 @@
       <div class="room-shell">
         <div class="room-header">
           <div class="room-title" id="roomTitle">Untitled seating plan</div>
+          <div class="print-key" id="printKey" aria-hidden="true"></div>
           <a class="view-switch" id="viewSwitch" href="#">Pupil View</a>
         </div>
         <div id="room" aria-label="Seating plan room">
@@ -619,7 +624,6 @@
           <div class="key" id="keyBox"></div>
           <div class="desk" id="teacherDesk">Teacher desk</div>
         </div>
-        <div class="print-key" id="printKey" aria-hidden="true"></div>
       </div>
     </main>
   </div>
