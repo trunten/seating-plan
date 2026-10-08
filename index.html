@@ -197,7 +197,7 @@
   #room.pupil-view .pupil-desk-leg.left{left:12%}
   #room.pupil-view .pupil-desk-leg.right{right:12%}
   #room.pupil-view .seat-name{
-    position:static;z-index:auto;height:auto;padding:0;
+    position:static;z-index:auto;height:auto;padding:0;min-width:0;max-width:100%;
     color:#192a43;font-size:clamp(11px,1.25vw,16px);font-weight:900;
     text-shadow:0 1px 0 rgba(255,255,255,.75);
   }
@@ -820,7 +820,7 @@
 
       const name = String(seat.data.Name || '').trim();
       if(isPupil){
-        el.innerHTML = `<div class="pupil-chair" aria-hidden="true"><span class="chair-face">•‿•</span></div><div class="pupil-desk-apron" aria-hidden="true"></div><div class="pupil-desk-leg left" aria-hidden="true"></div><div class="pupil-desk-leg right" aria-hidden="true"></div><div class="pupil-desk-top"><div class="seat-name">${escHtml(name)}</div></div>`;
+        el.innerHTML = `<div class="pupil-chair" aria-hidden="true"><span class="chair-face">•‿•</span></div><div class="pupil-desk-apron" aria-hidden="true"></div><div class="pupil-desk-leg left" aria-hidden="true"></div><div class="pupil-desk-leg right" aria-hidden="true"></div><div class="pupil-desk-top"><div class="seat-name" title="${escHtml(name)}">${escHtml(name)}</div></div>`;
       }else{
         const fields = state.displayFields.filter(f => f !== 'Name' && state.columns.includes(f));
         const body = fields.map(f => {
@@ -852,11 +852,11 @@
 
   function fitAllSeatContents(){
     const room=$('room');
-    if(!room || state.viewMode==='pupil') return;
+    if(!room) return;
     for(const seat of room.querySelectorAll('.seat')){
       const name=seat.querySelector('.seat-name');
       const fields=seat.querySelector('.seat-fields');
-      if(!name || !fields) continue;
+      if(!name) continue;
       // Start at a comfortable size, shrink names to fit, and wrap at 8pt.
       name.classList.remove('name-wrap');
       let size=16;
@@ -868,6 +868,7 @@
       if(name.scrollWidth>name.clientWidth+1) name.classList.add('name-wrap');
       // The available height changes with room proportions and wrapped names.
       // Five or six fields fit in a single compact column; 7+ use two columns.
+      if(!fields) continue;
       const count=fields.children.length;
       if(!count) continue;
       const rows=count>6?Math.ceil(count/2):count;
