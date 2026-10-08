@@ -84,18 +84,7 @@
   }
   #room.dragging{cursor:grabbing}
   #room.pupil-view{
-    background-color:#f4cf91;
-    background-image:
-      linear-gradient(118deg,
-        rgba(255,255,255,.48) 0 9%,
-        rgba(255,255,255,.12) 9% 16%,
-        transparent 16% 29%,
-        rgba(255,247,218,.28) 29% 36%,
-        transparent 36% 100%),
-      repeating-linear-gradient(90deg,
-        transparent 0 148px,
-        rgba(126,76,33,.055) 148px 150px),
-      linear-gradient(180deg,#f8ddb0 0%,#f3cd91 56%,#ecc17d 100%);
+    background:#f2cd91;
     border-color:#e2a33b;
     box-shadow:0 12px 30px rgba(120,76,25,.15),inset 0 0 0 1px rgba(255,255,255,.55);
   }
@@ -103,8 +92,7 @@
     content:'';
     position:absolute;inset:0;z-index:0;pointer-events:none;
     background:
-      linear-gradient(121deg,rgba(255,255,255,.34) 0 7%,transparent 7% 16%,rgba(255,255,255,.16) 16% 22%,transparent 22% 100%),
-      radial-gradient(ellipse at 7% 7%,rgba(255,245,187,.28),transparent 34%);
+      linear-gradient(122deg,rgba(255,255,255,.30) 0 9%,transparent 9% 18%,rgba(255,255,255,.13) 18% 24%,transparent 24% 100%);
   }
   #room.pupil-view::after{
     content:'';
@@ -117,9 +105,10 @@
   .pupil-decor{display:none;position:absolute;z-index:1;pointer-events:none;user-select:none}
   #room.pupil-view .pupil-decor{display:block}
   .cartoon-plant{width:72px;height:94px;filter:drop-shadow(0 5px 3px rgba(89,55,20,.16))}
-  .plant-a{left:-8px;bottom:-5px;transform:rotate(-5deg) scale(1.04)}
-  .plant-b{right:-5px;top:28px;transform:rotate(5deg) scale(.90)}
-  .plant-c{right:-8px;bottom:-6px;transform:rotate(5deg) scale(1.08)}
+  .plant-a{left:12px;bottom:12px;transform:rotate(-5deg) scale(1.00);transform-origin:left bottom}
+  .plant-b{right:12px;top:48px;transform:rotate(5deg) scale(.88);transform-origin:right top}
+  .plant-c{right:12px;bottom:12px;transform:rotate(5deg) scale(1.02);transform-origin:right bottom}
+  .pupil-decor.hidden-by-desk{display:none!important}
   .cartoon-pot{
     position:absolute;left:16px;bottom:0;width:42px;height:34px;
     background:var(--pot,#ff785f);border:3px solid #334155;border-radius:8px 8px 17px 17px;
@@ -156,8 +145,7 @@
 
   .pupil-chair{display:none}
   #room.pupil-view .pupil-chair{
-    display:flex;position:absolute;left:28%;top:-22%;width:44%;height:43%;
-    align-items:center;justify-content:center;
+    display:block;position:absolute;left:28%;top:-22%;width:44%;height:43%;
     background:var(--desk-color,#ff5f68);
     border:3px solid #33261f;border-bottom:0;
     border-radius:18px 18px 7px 7px;
@@ -165,13 +153,10 @@
     box-shadow:inset 0 -5px rgba(255,255,255,.16);
     z-index:1;
   }
-  #room.pupil-view .pupil-chair::before,
-  #room.pupil-view .pupil-chair::after{
-    content:'';position:absolute;top:39%;width:9px;height:3px;border-radius:3px;
-    background:var(--desk-color,#ff5f68);
+  #room.pupil-view .chair-face{
+    position:absolute;left:0;right:0;top:2px;text-align:center;
+    line-height:1;color:#253650;font-size:12px;font-weight:900;letter-spacing:.8px;
   }
-  #room.pupil-view .pupil-chair::before{left:-13px;transform:rotate(53deg)}
-  #room.pupil-view .pupil-chair::after{right:-13px;transform:rotate(-53deg)}
 
   .pupil-desk-top,.pupil-desk-apron,.pupil-desk-leg{display:none}
   #room.pupil-view .pupil-desk-top{
@@ -212,6 +197,23 @@
   }
   #room.pupil-view .desk::before{display:none}
   #room.pupil-view .teacher-rotate{display:none}
+  .teacher-pen-pot{display:none}
+  #room.pupil-view .teacher-pen-pot{
+    display:block;position:absolute;right:9px;top:8px;width:20px;height:22px;
+    background:#fff;border:2px solid #5d3a23;border-radius:4px 4px 7px 7px;
+    box-shadow:inset 0 -4px rgba(89,58,35,.08);
+  }
+  #room.pupil-view .teacher-pen-pot::before,
+  #room.pupil-view .teacher-pen-pot::after{
+    content:'';position:absolute;bottom:15px;width:4px;height:18px;border-radius:3px 3px 0 0;
+    transform-origin:bottom center;
+  }
+  #room.pupil-view .teacher-pen-pot::before{
+    left:4px;background:#3b82f6;transform:rotate(-10deg)
+  }
+  #room.pupil-view .teacher-pen-pot::after{
+    right:4px;background:#ef476f;transform:rotate(10deg)
+  }
   .seat,.desk{position:absolute;transform:translate(0,0);touch-action:none}
   .seat{
     width:14.1667%;
@@ -761,7 +763,7 @@
 
       const name = String(seat.data.Name || '').trim();
       if(isPupil){
-        el.innerHTML = `<div class="pupil-chair" aria-hidden="true">•‿•</div><div class="pupil-desk-apron" aria-hidden="true"></div><div class="pupil-desk-leg left" aria-hidden="true"></div><div class="pupil-desk-leg right" aria-hidden="true"></div><div class="pupil-desk-top"><div class="seat-name">${escHtml(name)}</div></div>`;
+        el.innerHTML = `<div class="pupil-chair" aria-hidden="true"><span class="chair-face">•‿•</span></div><div class="pupil-desk-apron" aria-hidden="true"></div><div class="pupil-desk-leg left" aria-hidden="true"></div><div class="pupil-desk-leg right" aria-hidden="true"></div><div class="pupil-desk-top"><div class="seat-name">${escHtml(name)}</div></div>`;
       }else{
         const fields = state.displayFields.filter(f => f !== 'Name' && state.columns.includes(f));
         const body = fields.map(f => {
@@ -785,8 +787,27 @@
     desk.style.left = (state.desk.x / ROOM_W * 100) + '%';
     desk.style.top = (state.desk.y / ROOM_H * 100) + '%';
     desk.innerHTML = isPupil
-      ? '<span class="teacher-desk-label">Teacher</span>'
+      ? '<span class="teacher-desk-label">Teacher</span><span class="teacher-pen-pot" aria-hidden="true"></span>'
       : '<span class="teacher-desk-label">Teacher desk</span><button class="teacher-rotate" type="button" title="Rotate teacher desk 90°" aria-label="Rotate teacher desk 90 degrees">↻</button>';
+    updatePupilDecorVisibility();
+  }
+
+  function updatePupilDecorVisibility(){
+    const room=$('room');
+    const plants=[...room.querySelectorAll('.cartoon-plant')];
+    plants.forEach(p=>p.classList.remove('hidden-by-desk'));
+    if(state.viewMode!=='pupil') return;
+
+    const obstacles=[...room.querySelectorAll('.seat'),$('teacherDesk')].filter(Boolean);
+    const gap=8;
+    for(const plant of plants){
+      const pr=plant.getBoundingClientRect();
+      const blocked=obstacles.some(el=>{
+        const r=el.getBoundingClientRect();
+        return pr.left < r.right+gap && pr.right+gap > r.left && pr.top < r.bottom+gap && pr.bottom+gap > r.top;
+      });
+      plant.classList.toggle('hidden-by-desk',blocked);
+    }
   }
 
   function sizeExpandedKeyToContent(){
