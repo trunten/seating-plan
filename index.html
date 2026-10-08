@@ -84,33 +84,33 @@
   }
   #room.dragging{cursor:grabbing}
   #room.pupil-view{
-    background-color:#f5d39a;
+    background-color:#f4cf91;
     background-image:
       linear-gradient(118deg,
-        rgba(255,255,255,.42) 0 8%,
-        rgba(255,255,255,.10) 8% 14%,
-        transparent 14% 25%,
-        rgba(255,247,218,.38) 25% 33%,
-        transparent 33% 100%),
-      repeating-linear-gradient(90deg,rgba(131,79,33,.07) 0 2px,transparent 2px 150px),
-      repeating-linear-gradient(0deg,rgba(131,79,33,.045) 0 1px,transparent 1px 88px),
-      linear-gradient(180deg,#ffe9bd 0%,#f3cb8a 55%,#edbd78 100%);
-    border-color:#e7aa3f;
-    box-shadow:0 12px 30px rgba(120,76,25,.16),inset 0 0 0 1px rgba(255,255,255,.55);
+        rgba(255,255,255,.48) 0 9%,
+        rgba(255,255,255,.12) 9% 16%,
+        transparent 16% 29%,
+        rgba(255,247,218,.28) 29% 36%,
+        transparent 36% 100%),
+      repeating-linear-gradient(90deg,
+        transparent 0 148px,
+        rgba(126,76,33,.055) 148px 150px),
+      linear-gradient(180deg,#f8ddb0 0%,#f3cd91 56%,#ecc17d 100%);
+    border-color:#e2a33b;
+    box-shadow:0 12px 30px rgba(120,76,25,.15),inset 0 0 0 1px rgba(255,255,255,.55);
   }
   #room.pupil-view::before{
     content:'';
     position:absolute;inset:0;z-index:0;pointer-events:none;
     background:
-      linear-gradient(120deg,rgba(255,255,255,.34) 0 8%,transparent 8% 17%,rgba(255,255,255,.20) 17% 23%,transparent 23% 100%),
-      radial-gradient(ellipse at 10% 12%,rgba(255,238,158,.34),transparent 31%);
-    mix-blend-mode:screen;
+      linear-gradient(121deg,rgba(255,255,255,.34) 0 7%,transparent 7% 16%,rgba(255,255,255,.16) 16% 22%,transparent 22% 100%),
+      radial-gradient(ellipse at 7% 7%,rgba(255,245,187,.28),transparent 34%);
   }
   #room.pupil-view::after{
     content:'';
     position:absolute;left:0;right:0;top:0;height:4.8%;z-index:0;pointer-events:none;
-    background:linear-gradient(180deg,#f0c57b 0%,#d99a4d 74%,#bf7834 75%,#bf7834 100%);
-    box-shadow:0 4px 8px rgba(105,61,26,.13);
+    background:linear-gradient(180deg,#efc178 0%,#d79449 73%,#b97133 74%,#b97133 100%);
+    box-shadow:0 4px 8px rgba(105,61,26,.12);
   }
   #room.pupil-view .key{display:none}
 
@@ -143,52 +143,67 @@
 
   #room.pupil-view .seat{
     overflow:visible;
-    background:var(--desk-color,#ff6f61);
-    border:3px solid #33261f;
-    border-radius:11px 11px 14px 14px;
-    box-shadow:0 7px 0 var(--desk-dark,#b94c43),0 11px 15px rgba(91,55,20,.17);
+    background:transparent;
+    border:0;
+    border-radius:0;
+    box-shadow:none;
     z-index:3;
   }
-  #room.pupil-view .seat::before{
-    content:'';
-    position:absolute;left:-5px;right:-5px;top:-4px;height:66%;
-    background:linear-gradient(180deg,#fffaf0 0%,#f9e7c9 100%);
-    border:3px solid #33261f;border-radius:11px;
-    box-shadow:inset 0 -4px rgba(211,171,111,.18);
-    z-index:2;
-  }
-  #room.pupil-view .seat::after{
-    content:'';
-    position:absolute;left:9%;right:9%;bottom:-9px;height:10px;
-    background:var(--desk-dark,#b94c43);border:2px solid #33261f;border-top:0;border-radius:0 0 8px 8px;
-    z-index:-1;
-  }
+  #room.pupil-view .seat::before,
+  #room.pupil-view .seat::after{display:none}
   #room.pupil-view .seat.selected{outline:none}
   #room.pupil-view .seat-fields,#room.pupil-view .colour-band{display:none}
-  #room.pupil-view .seat-name{
-    position:relative;z-index:4;height:66%;padding:0 8px;
-    display:flex;align-items:center;justify-content:center;
-    color:#192a43;font-size:clamp(11px,1.28vw,16px);font-weight:900;
-    text-shadow:0 1px 0 rgba(255,255,255,.75);
-  }
+
   .pupil-chair{display:none}
   #room.pupil-view .pupil-chair{
-    display:flex;position:absolute;left:26%;top:-31%;width:48%;height:43%;
+    display:flex;position:absolute;left:28%;top:-22%;width:44%;height:43%;
     align-items:center;justify-content:center;
-    background:var(--desk-color,#ff6f61);border:3px solid #33261f;border-bottom:0;
-    border-radius:17px 17px 6px 6px;
+    background:var(--desk-color,#ff5f68);
+    border:3px solid #33261f;border-bottom:0;
+    border-radius:18px 18px 7px 7px;
     color:#253650;font-size:12px;font-weight:900;letter-spacing:.8px;
-    box-shadow:inset 0 -5px rgba(255,255,255,.17);
+    box-shadow:inset 0 -5px rgba(255,255,255,.16);
     z-index:1;
   }
   #room.pupil-view .pupil-chair::before,
   #room.pupil-view .pupil-chair::after{
-    content:'';position:absolute;top:38%;width:10px;height:3px;border-radius:3px;background:var(--desk-color,#ff6f61);
-    box-shadow:0 0 0 1px rgba(51,38,31,.10);
+    content:'';position:absolute;top:39%;width:9px;height:3px;border-radius:3px;
+    background:var(--desk-color,#ff5f68);
   }
-  #room.pupil-view .pupil-chair::before{left:-15px;transform:rotate(55deg)}
-  #room.pupil-view .pupil-chair::after{right:-15px;transform:rotate(-55deg)}
+  #room.pupil-view .pupil-chair::before{left:-13px;transform:rotate(53deg)}
+  #room.pupil-view .pupil-chair::after{right:-13px;transform:rotate(-53deg)}
 
+  .pupil-desk-top,.pupil-desk-apron,.pupil-desk-leg{display:none}
+  #room.pupil-view .pupil-desk-top{
+    display:flex;position:absolute;left:0;right:0;top:11%;height:54%;
+    align-items:center;justify-content:center;padding:0 9px;
+    background:linear-gradient(180deg,#fffaf1 0%,#f6e2c0 100%);
+    border:3px solid #33261f;border-radius:12px;
+    box-shadow:inset 0 -4px rgba(196,149,88,.14),0 4px 5px rgba(82,53,27,.10);
+    z-index:4;
+  }
+  #room.pupil-view .pupil-desk-apron{
+    display:block;position:absolute;left:8%;right:8%;top:61%;height:25%;
+    background:var(--desk-color,#ff5f68);
+    border:3px solid #33261f;border-top:0;
+    border-radius:0 0 9px 9px;
+    box-shadow:inset 0 -6px rgba(0,0,0,.06);
+    z-index:2;
+  }
+  #room.pupil-view .pupil-desk-leg{
+    display:block;position:absolute;top:79%;width:9%;height:26%;
+    background:var(--desk-color,#ff5f68);
+    border:3px solid #33261f;border-radius:0 0 7px 7px;
+    box-shadow:inset 0 -5px rgba(0,0,0,.06);
+    z-index:1;
+  }
+  #room.pupil-view .pupil-desk-leg.left{left:12%}
+  #room.pupil-view .pupil-desk-leg.right{right:12%}
+  #room.pupil-view .seat-name{
+    position:static;z-index:auto;height:auto;padding:0;
+    color:#192a43;font-size:clamp(11px,1.25vw,16px);font-weight:900;
+    text-shadow:0 1px 0 rgba(255,255,255,.75);
+  }
   #room.pupil-view .desk{
     background:linear-gradient(180deg,#dca56d 0%,#bd7a45 100%);
     border-color:#5d3a23;color:#2d2118;
@@ -746,7 +761,7 @@
 
       const name = String(seat.data.Name || '').trim();
       if(isPupil){
-        el.innerHTML = `<div class="pupil-chair" aria-hidden="true">•‿•</div><div class="seat-name">${escHtml(name)}</div>`;
+        el.innerHTML = `<div class="pupil-chair" aria-hidden="true">•‿•</div><div class="pupil-desk-apron" aria-hidden="true"></div><div class="pupil-desk-leg left" aria-hidden="true"></div><div class="pupil-desk-leg right" aria-hidden="true"></div><div class="pupil-desk-top"><div class="seat-name">${escHtml(name)}</div></div>`;
       }else{
         const fields = state.displayFields.filter(f => f !== 'Name' && state.columns.includes(f));
         const body = fields.map(f => {
