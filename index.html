@@ -998,3 +998,128 @@
   }
 
   function setSettingsHidden(hidden){
+    const workspace=document.querySelector('.workspace');
+    const btn=$('settingsToggleBtn');
+    workspace.classList.toggle('settings-hidden',hidden);
+    btn.textContent=hidden?'Show settings':'Hide settings';
+    btn.setAttribute('aria-pressed',hidden?'true':'false');
+    requestAnimationFrame(()=>renderRoom());
+  }
+
+  // Events
+  document.querySelectorAll('.tab').forEach(t => t.addEventListener('click',()=>switchTab(t.dataset.tab)));
+  $('planName').addEventListener('input',e=>{state.title=e.target.value;$('roomTitle').textContent=state.title||'Untitled seating plan';updateDocumentTitle();queueDraft();});
+  $('saveBtn').addEventListener('click',saveCurrent);
+  $('newBtn').addEventListener('click',newPlan);
+  $('addSeatTopBtn').addEventListener('click',()=>addSeat());
+  $('addSeatBtn').addEventListener('click',()=>addSeat());
+  $('addSeatDataBtn').addEventListener('click',()=>addSeat());
+  $('settingsToggleBtn').addEventListener('click',()=>setSettingsHidden(!document.querySelector('.workspace').classList.contains('settings-hidden')));
+  $('printBtn').addEventListener('click',()=>window.print());
+  $('importCsvBtn').addEventListener('click',()=>$('csvInput').click());
+  $('csvInput').addEventListener('change',async e=>{if(e.target.files[0])await importCSVFile(e.target.files[0]);e.target.value='';});
+  $('exportPlanBtn').addEventListener('click',exportPortable);
+  $('importPlanBtn').addEventListener('click',()=>$('planInput').click());
+  $('planInput').addEventListener('change',async e=>{if(e.target.files[0])await importPortableFile(e.target.files[0]);e.target.value='';});
+  $('excelBtn').addEventListener('click',exportExcel);
+  $('autoArrangeBtn').addEventListener('click',autoArrange);
+  $('resetDeskBtn').addEventListener('click',resetDesk);
+  $('gridSize').addEventListener('change',e=>{state.gridSize=+e.target.value;renderRoom();queueDraft();});
+  $('addFieldBtn').addEventListener('click',()=>addField($('newFieldName').value));
+  $('newFieldName').addEventListener('keydown',e=>{if(e.key==='Enter')addField(e.target.value);});
+  $('showFieldLabels').addEventListener('change',e=>{state.showFieldLabels=e.target.checked;renderRoom();queueDraft();});
+  $('addRuleBtn').addEventListener('click',()=>{state.rules.unshift({id:uid(),field:state.columns[0],operator:'equals',value:'',color:'#d92d20',label:'',enabled:true});renderRules();renderRoom();queueDraft();});
+
+  $('dataTableWrap').addEventListener('input',e=>{
+    const inp=e.target.closest('input[data-seat]'); if(!inp)return;
+    const seat=state.seats.find(s=>s.id===inp.dataset.seat); if(!seat)return;
+    seat.data[inp.dataset.field]=inp.value; renderRoom(); queueDraft();
+  });
+  $('dataTableWrap').addEventListener('click',e=>{
+    const rem=e.target.closest('[data-remove-seat]'); if(rem){removeSeat(rem.dataset.removeSeat);return;}
+    const focus=e.target.closest('[data-focus-seat]'); if(focus){selectedSeatId=focus.dataset.focusSeat;renderRoom();return;}
+  });
+
+  $('fieldDesigner').addEventListener('change',e=>{
+    const cb=e.target.closest('[data-toggle-field]'); if(!cb)return;
+    const f=cb.dataset.toggleField;
+    if(cb.checked){ if(!state.displayFields.includes(f))state.displayFields.push(f); }
+    else state.displayFields=state.displayFields.filter(x=>x!==f);
+    renderFieldDesigner();renderRoom();queueDraft();
+  });
+  $('fieldDesigner').addEventListener('click',e=>{
+    const remove=e.target.closest('[data-remove-field]');
+    if(remove){ removeField(remove.dataset.removeField); return; }
+    const up=e.target.closest('[data-up-field]'), down=e.target.closest('[data-down-field]');
+    const btn=up||down; if(!btn)return;
+    const f=up?up.dataset.upField:down.dataset.downField, i=state.displayFields.indexOf(f); if(i<0)return;
+    const ni=up?i-1:i+1; if(ni<0||ni>=state.displayFields.length)return;
+    [state.displayFields[i],state.displayFields[ni]]=[state.displayFields[ni],state.displayFields[i]];
+    renderFieldDesigner();renderRoom();queueDraft();
+  });
+
+  $('rulesList').addEventListener('input',e=>{
+    const ruleEl=e.target.closest('[data-rule]'); if(!ruleEl)return;
+    const r=state.rules.find(x=>x.id===ruleEl.dataset.rule); if(!r)return;
+    const prop=e.target.dataset.ruleProp; if(!prop)return;
+    r[prop]=e.target.type==='checkbox'?e.target.checked:e.target.value;
+    renderRoom();queueDraft();
+  });
+  $('rulesList').addEventListener('change',e=>{
+    const ruleEl=e.target.closest('[data-rule]'); if(!ruleEl)return;
+    const r=state.rules.find(x=>x.id===ruleEl.dataset.rule); if(!r)return;
+    const prop=e.target.dataset.ruleProp; if(!prop)return;
+    r[prop]=e.target.type==='checkbox'?e.target.checked:e.target.value;
+    if(prop==='operator') renderRules();
+    renderRoom();queueDraft();
+  });
+  $('rulesList').addEventListener('click',e=>{
+    const del=e.target.closest('[data-delete-rule]'); if(!del)return;
+    state.rules=state.rules.filter(r=>r.id!==del.dataset.deleteRule);renderRules();renderRoom();queueDraft();
+  });
+
+  $('savedPlans').addEventListener('click',e=>{
+    const load=e.target.closest('[data-load-plan]'); if(load){loadStored(load.dataset.loadPlan);return;}
+    const del=e.target.closest('[data-delete-plan]'); if(del){deleteStored(del.dataset.deletePlan);}
+  });
+
+  $('keyBox').addEventListener('click',e=>{
+    const item=e.target.closest('[data-key-rule]');
+    if(!item)return;
+    e.stopPropagation();
+    toggleRuleHighlight(item.dataset.keyRule);
+  });
+
+  document.addEventListener('click',e=>{
+    if(!activeRuleIds.size) return;
+    if(e.target.closest('.key-item,.seat,.desk,button,input,select,textarea,label,a,.tab,.dropzone')) return;
+    clearRuleHighlights();
+  });
+
+  $('room').addEventListener('pointerdown',e=>{
+    const seat=e.target.closest('.seat'); if(seat){startDrag(e,'seat',seat.dataset.id);return;}
+    const desk=e.target.closest('.desk'); if(desk){startDrag(e,'desk');}
+  });
+  window.addEventListener('pointermove',moveDrag);
+  window.addEventListener('pointerup',endDrag);
+  window.addEventListener('pointercancel',endDrag);
+  $('room').addEventListener('dblclick',e=>{const seat=e.target.closest('.seat');if(seat)showSeatInTable(seat.dataset.id);});
+
+  const drop=$('dropzone');
+  ['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('dragover');}));
+  ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('dragover');}));
+  drop.addEventListener('drop',async e=>{
+    const file=e.dataTransfer.files[0]; if(!file)return;
+    if(file.name.toLowerCase().endsWith('.csv')) await importCSVFile(file); else await importPortableFile(file);
+  });
+
+  // Restore draft if present.
+  try{
+    const draft=localStorage.getItem(DRAFT_KEY);
+    if(draft) state=normaliseState(JSON.parse(draft));
+  }catch(e){}
+  renderAll();
+})();
+</script>
+</body>
+</html>
