@@ -839,7 +839,8 @@
       if(isPupil){
         el.innerHTML = `<div class="pupil-chair" aria-hidden="true"><span class="chair-face">•‿•</span></div><div class="pupil-desk-apron" aria-hidden="true"></div><div class="pupil-desk-leg left" aria-hidden="true"></div><div class="pupil-desk-leg right" aria-hidden="true"></div><div class="pupil-desk-top"></div><div class="pupil-desk-name"><div class="seat-name" title="${escHtml(name)}">${escHtml(name)}</div></div>`;
       }else{
-        const fields = state.displayFields.filter(f => f !== 'Name' && state.columns.includes(f));
+        // Unassigned desks show only their placeholder name, not blank field labels.
+        const fields = name ? state.displayFields.filter(f => f !== 'Name' && state.columns.includes(f)) : [];
         const body = fields.map(f => {
           const val = seat.data[f] ?? '';
           return `<div class="seat-field" title="${escHtml(f+': '+val)}">${state.showFieldLabels ? `<b>${escHtml(f)}:</b> ` : ''}${escHtml(val)}</div>`;
@@ -1644,7 +1645,7 @@
       const x=ROOM_COL+Math.round(seat.x/UNIT), y=ROOM_ROW+Math.round(seat.y/UNIT);
       const right=x+seatWidth-1,bottom=y+seatHeight-1;
       const name=String(seat.data.Name||'').trim()||'Empty desk';
-      const fields=state.displayFields.filter(f=>f!=='Name'&&state.columns.includes(f));
+      const fields=String(seat.data.Name||'').trim() ? state.displayFields.filter(f=>f!=='Name'&&state.columns.includes(f)) : [];
       const details=fields.map(f=>(state.showFieldLabels?f+': ':'')+String(seat.data[f]??'')).join('\n');
       paint(x,y,right,bottom,{bg:'#F8FAFC',outline:true});
       merge(x,y,right,y+4,name,{size:12,fg:'#26384F',bold:true,bg:'#E9F0FF',outline:true});
