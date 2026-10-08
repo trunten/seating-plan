@@ -27,9 +27,9 @@
   .brand-wrap{display:flex;align-items:stretch;justify-content:flex-start;min-width:0;overflow:hidden}
   .brand-logo{display:block;height:100%;max-height:64px;width:auto;max-width:100%;object-fit:contain;object-position:left center}
   .brand-compact{display:none}
-  .topbar-controls{width:min(550px,58vw);min-width:0;display:grid;grid-template-rows:30px 30px;gap:4px;align-self:center;justify-self:end}
-  .topbar-row{width:100%;display:grid;align-items:stretch;gap:5px}
-  .topbar-row.primary-row{grid-template-columns:minmax(0,1fr) 76px 34px}
+  .topbar-controls{--control-gap:5px;--download-width:34px;--button-width:calc((100% - 3 * var(--control-gap)) / 4);width:min(550px,58vw);min-width:0;display:grid;grid-template-rows:30px 30px;gap:4px;align-self:center;justify-self:end}
+  .topbar-row{width:100%;display:grid;align-items:stretch;gap:var(--control-gap)}
+  .topbar-row.primary-row{grid-template-columns:minmax(0,1fr) calc(var(--button-width) - var(--download-width) - var(--control-gap)) var(--download-width)}
   .topbar-row.secondary-row{grid-template-columns:repeat(4,minmax(0,1fr))}
   .plan-name{width:100%;min-width:0;height:30px;background:#fff;color:#101828;border:1px solid var(--line);border-radius:9px;padding:0 11px;box-shadow:0 1px 2px rgba(16,24,40,.04)}
   .topbar .btn{height:30px;min-width:0;padding:0 7px;font-size:12px;background:#f8fafc;color:#344054;border:1px solid var(--line);white-space:nowrap}
@@ -43,14 +43,14 @@
   .workspace.settings-hidden{grid-template-columns:44px minmax(0,1fr)}
   .sidebar{grid-column:1;grid-row:1;background:var(--panel);border-right:1px solid var(--line);min-width:0;min-height:0;overflow:auto;padding:14px;opacity:1;transition:opacity .18s ease,padding .3s ease}
   .workspace.settings-hidden .sidebar{overflow:hidden;opacity:0;pointer-events:none;padding:14px 0}
-  .settings-rail{grid-column:1;grid-row:1;display:flex;align-items:center;justify-content:center;width:100%;min-width:0;padding:10px 4px;border:0;border-right:1px solid var(--line);background:#eaf0ff;color:#2457d6;font-weight:800;cursor:pointer;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .2s ease}
+  .settings-rail{grid-column:1;grid-row:1;display:flex;align-items:center;justify-content:flex-start;flex-direction:column;width:100%;min-width:0;padding:16px 4px 10px;border:0;border-right:1px solid var(--line);background:#eaf0ff;color:#2457d6;font-weight:800;cursor:pointer;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .2s ease}
   .workspace.settings-hidden .settings-rail{opacity:1;visibility:visible;pointer-events:auto}
   .settings-rail-content{display:flex;align-items:center;gap:9px;writing-mode:vertical-rl;transform:rotate(180deg);white-space:nowrap;letter-spacing:.3px}
-  .settings-rail-chevron{font-size:20px;line-height:1;display:inline-block;transform:rotate(180deg)}
+  .settings-rail-chevron{width:19px;height:19px;display:inline-block;flex:none;transform:rotate(180deg);stroke:currentColor;fill:none;stroke-width:2.8;stroke-linecap:round;stroke-linejoin:round}
   .settings-rail:hover{background:#dce8ff}
   .main{grid-column:2;grid-row:1;min-width:0;overflow:auto;padding:18px}
   .tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr)) 28px;gap:5px;margin-bottom:12px}
-  .settings-close{width:28px;height:33px;border:1px solid var(--line);border-radius:8px;background:#fff;color:#475467;font-size:19px;font-weight:700;cursor:pointer}
+  .settings-close{width:28px;height:33px;border:1px solid var(--line);border-radius:8px;background:#fff;color:#475467;font-size:19px;font-weight:700;cursor:pointer;display:grid;place-items:center;padding:0;line-height:1}
   .settings-close:hover{background:#f2f4f7}
   .tab{border:1px solid var(--line);background:#f9fafb;border-radius:9px;padding:8px 6px;font-size:12px;font-weight:700;color:#475467}
   .tab.active{background:#eaf0ff;border-color:#9fb5ff;color:#163b9d}
@@ -244,7 +244,8 @@
   .seat-name.name-wrap{white-space:normal;overflow-wrap:anywhere;text-overflow:clip;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2}
   .seat.empty .seat-name{color:#98a2b3;font-style:italic;font-weight:650}
   .seat-fields{padding:0 5px 1px;display:flex;flex-direction:column;justify-content:space-evenly;gap:0;flex:1 1 auto;min-height:0;overflow:hidden}
-  .seat-fields.dense-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:minmax(0,1fr);column-gap:3px;align-content:stretch}
+  .seat-fields.dense-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:minmax(0,1fr);grid-auto-flow:row;column-gap:3px;align-content:stretch}
+  .seat-fields.dense-fields .seat-field.field-wide{grid-column:span 2}
   .seat-field{min-width:0;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#475467;line-height:1.06;flex:0 1 auto}
   .seat-fields.dense-fields .seat-field{align-self:center}
   .seat-field b{color:#344054}
@@ -346,14 +347,14 @@
   @media(max-width:950px){
     .topbar{grid-template-columns:minmax(125px,1fr) auto;gap:8px;padding:5px 9px}
     .brand-logo{max-height:60px}
-    .topbar-controls{width:min(510px,68vw);grid-template-rows:29px 29px;gap:4px}
+    .topbar-controls{--download-width:32px;width:min(510px,68vw);grid-template-rows:29px 29px;gap:4px}
     .plan-name,.topbar .btn{height:29px}
     .topbar .btn{padding:0 6px;font-size:11px}
-    .topbar-row.primary-row{grid-template-columns:minmax(0,1fr) 65px 32px}
+    .topbar-row.primary-row{grid-template-columns:minmax(0,1fr) calc(var(--button-width) - var(--download-width) - var(--control-gap)) var(--download-width)}
     .workspace,.workspace.settings-hidden{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr)}
     .sidebar{grid-column:1;grid-row:1;border-right:0;border-bottom:1px solid var(--line);max-height:3000px;overflow:hidden;transition:max-height .3s ease,opacity .2s ease,padding .3s ease}
     .workspace.settings-hidden .sidebar{max-height:0;padding:0;visibility:hidden}
-    .settings-rail{grid-column:1;grid-row:1;justify-content:center;height:38px;padding:5px;border:0;border-bottom:1px solid var(--line)}
+    .settings-rail{grid-column:1;grid-row:1;justify-content:center;flex-direction:row;height:38px;padding:5px;border:0;border-bottom:1px solid var(--line)}
     .settings-rail-content{writing-mode:horizontal-tb;transform:none}
     .settings-rail-chevron{transform:rotate(90deg)}
     .main{grid-column:1;grid-row:2;padding:12px}
@@ -367,9 +368,9 @@
     .brand-compact-word{font-weight:900;font-size:12px;line-height:1;letter-spacing:-.3px;white-space:nowrap}
     .brand-compact-word .desk-word{color:#243650}
     .brand-compact-word .buddy-word{color:#2f80ed}
-    .topbar-controls{width:100%;min-width:0;grid-template-rows:27px 27px;gap:3px}
+    .topbar-controls{--control-gap:3px;--download-width:24px;width:100%;min-width:0;grid-template-rows:27px 27px;gap:3px}
     .topbar-row{gap:5px}
-    .topbar-row.primary-row{grid-template-columns:minmax(0,1fr) 48px 28px}
+    .topbar-row.primary-row{grid-template-columns:minmax(0,1fr) calc(var(--button-width) - var(--download-width) - var(--control-gap)) var(--download-width)}
     .topbar-row.secondary-row{grid-template-columns:repeat(4,minmax(0,1fr))}
     .plan-name,.topbar .btn{height:27px}
     .plan-name{padding:0 8px;font-size:12px}
@@ -502,7 +503,7 @@
         </div>
       </section>
     </aside>
-    <button class="settings-rail" id="settingsOpenBtn" type="button" aria-label="Open Settings"><span class="settings-rail-content"><span class="settings-rail-chevron" aria-hidden="true">»</span><span>Open Settings</span></span></button>
+    <button class="settings-rail" id="settingsOpenBtn" type="button" aria-label="Open Settings"><span class="settings-rail-content"><svg class="settings-rail-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 5 7 7-7 7 M12 5l7 7-7 7"/></svg><span>Open Settings</span></span></button>
 
     <main class="main">
       <div class="room-shell">
@@ -830,7 +831,7 @@
         const band = matches.length
           ? matches.map(r => `<div class="colour-segment" style="background:${escHtml(r.color)}" title="${escHtml(ruleLabel(r))}"></div>`).join('')
           : '<div class="colour-segment" style="background:#e4e7ec"></div>';
-        el.innerHTML = `<div class="seat-name" title="${escHtml(name||'Empty desk')}">${escHtml(name || 'Empty desk')}</div><div class="seat-fields${fields.length>6?' dense-fields':''}">${body}</div><div class="colour-band">${band}</div>`;
+        el.innerHTML = `<div class="seat-name" title="${escHtml(name||'Empty desk')}">${escHtml(name || 'Empty desk')}</div><div class="seat-fields${fields.length>3?' dense-fields':''}">${body}</div><div class="colour-band">${band}</div>`;
       }
       room.appendChild(el);
     });
@@ -857,7 +858,7 @@
       const name=seat.querySelector('.seat-name');
       const fields=seat.querySelector('.seat-fields');
       if(!name) continue;
-      // Start at a comfortable size, shrink names to fit, and wrap at 8pt.
+      // Shrink a single-line name to 8pt before trying a two-line wrap.
       name.classList.remove('name-wrap');
       let size=16;
       name.style.fontSize=size+'px';
@@ -866,15 +867,54 @@
         name.style.fontSize=size+'px';
       }
       if(name.scrollWidth>name.clientWidth+1) name.classList.add('name-wrap');
-      // The available height changes with room proportions and wrapped names.
-      // Five or six fields fit in a single compact column; 7+ use two columns.
       if(!fields) continue;
-      const count=fields.children.length;
+      const items=[...fields.children];
+      const count=items.length;
       if(!count) continue;
-      const rows=count>6?Math.ceil(count/2):count;
+      const dense=count>3;
+      fields.classList.toggle('dense-fields',dense);
+      // Measure complete field labels, including bold prefixes, without
+      // allowing overflow:hidden or ellipses to distort their natural width.
+      const fullTextWidth=field=>{
+        const range=document.createRange();
+        range.selectNodeContents(field);
+        const width=range.getBoundingClientRect().width;
+        range.detach?.();
+        return width;
+      };
+      let rows=count;
+      if(dense){
+        const half=(fields.clientWidth-3)/2;
+        const full=fields.clientWidth;
+        let usedSlots=0;
+        for(const field of items){
+          field.classList.remove('field-wide');
+          field.style.fontSize='11px';
+          const width=fullTextWidth(field);
+          // A long value (e.g. Attendance: 93.90%) uses the whole
+          // row; short fields share two columns on surrounding rows.
+          const wide=width>half-2;
+          field.classList.toggle('field-wide',wide);
+          if(wide && usedSlots%2) usedSlots++;
+          usedSlots+=wide?2:1;
+        }
+        rows=Math.ceil(usedSlots/2);
+        fields.style.gridTemplateRows='repeat('+rows+',minmax(0,1fr))';
+      }else{
+        fields.style.gridTemplateRows='';
+        items.forEach(field=>field.classList.remove('field-wide'));
+      }
       const available=fields.clientHeight;
       const fieldSize=Math.min(11,Math.max(8.5,(available-2)/rows/1.06));
-      for(const field of fields.children) field.style.fontSize=fieldSize+'px';
+      for(const field of items){
+        let font=fieldSize;
+        field.style.fontSize=font+'px';
+        // Preserve the whole value wherever a little font adjustment helps.
+        while(font>8.5 && fullTextWidth(field)>field.clientWidth-1){
+          font=Math.max(8.5,font-.5);
+          field.style.fontSize=font+'px';
+        }
+      }
     }
   }
   if(typeof ResizeObserver!=='undefined'){
