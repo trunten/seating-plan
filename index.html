@@ -64,7 +64,8 @@
   .room-shell{min-width:760px;max-width:1220px;margin:0 auto}
   .room-header{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}
   .room-title{font-size:18px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .status{font-size:12px;color:var(--muted)}
+  .view-switch{font-size:12px;font-weight:700;color:var(--accent);text-decoration:none;white-space:nowrap}
+  .view-switch:hover,.view-switch:focus-visible{text-decoration:underline}
   #room{
     position:relative;
     width:100%;
@@ -82,6 +83,54 @@
     user-select:none;
   }
   #room.dragging{cursor:grabbing}
+  #room.pupil-view{
+    background-color:#fffaf0;
+    background-image:
+      radial-gradient(circle at 12% 14%,rgba(255,213,79,.14) 0 34px,transparent 35px),
+      radial-gradient(circle at 88% 18%,rgba(102,187,106,.10) 0 42px,transparent 43px),
+      linear-gradient(180deg,#fffdf7 0%,#fff8e7 100%);
+    border-color:#f0b84b;
+  }
+  #room.pupil-view .key{display:none}
+  .pupil-decor{display:none;position:absolute;z-index:0;pointer-events:none;user-select:none;filter:drop-shadow(0 5px 4px rgba(16,24,40,.12))}
+  #room.pupil-view .pupil-decor{display:block}
+  .plant{font-size:44px;line-height:1}
+  .plant-a{left:1.3%;bottom:1.5%;transform:rotate(-5deg)}
+  .plant-b{right:1.4%;top:1.8%;transform:rotate(5deg) scale(.92)}
+  .plant-c{right:1.2%;bottom:1.5%;transform:rotate(4deg) scale(1.05)}
+  #room.pupil-view .seat{
+    overflow:visible;
+    background:linear-gradient(180deg,#ffd98a 0%,#f5bd63 100%);
+    border:2px solid #334155;
+    border-radius:10px 10px 14px 14px;
+    box-shadow:0 7px 0 #b87938,0 10px 14px rgba(91,55,20,.16);
+    z-index:2;
+  }
+  #room.pupil-view .seat.selected{outline:none}
+  #room.pupil-view .seat-fields,#room.pupil-view .colour-band{display:none}
+  #room.pupil-view .seat-name{
+    position:relative;z-index:3;
+    height:100%;padding:0 8px;
+    display:flex;align-items:center;justify-content:center;
+    color:#213047;font-size:clamp(11px,1.3vw,16px);
+    text-shadow:0 1px 0 rgba(255,255,255,.55);
+  }
+  .pupil-chair{display:none}
+  #room.pupil-view .pupil-chair{
+    display:flex;position:absolute;left:24%;top:-28%;width:52%;height:42%;
+    align-items:center;justify-content:center;
+    background:var(--chair-color,#6ab7ff);border:2px solid #334155;border-bottom:0;
+    border-radius:16px 16px 7px 7px;
+    color:#26384f;font-size:13px;font-weight:900;letter-spacing:1px;
+    box-shadow:inset 0 -5px rgba(255,255,255,.18);
+    z-index:1;
+  }
+  #room.pupil-view .desk{
+    background:linear-gradient(180deg,#dba66c 0%,#b97843 100%);
+    border-color:#684326;
+    color:#2d2118;
+    box-shadow:0 7px 0 #745038,0 11px 15px rgba(91,55,20,.18);
+  }
   .seat,.desk{position:absolute;transform:translate(0,0);touch-action:none}
   .seat{
     width:14.1667%;
@@ -121,23 +170,33 @@
   }
   .key{
     position:absolute;left:1.2%;top:1.4%;z-index:5;
-    min-width:130px;max-width:260px;
-    background:rgba(255,255,255,.94);
+    width:max-content;min-width:0;max-width:none;
+    background:rgba(255,255,255,.96);
     border:1px solid #98a2b3;
     border-radius:9px;padding:6px 8px;
     box-shadow:0 2px 8px rgba(16,24,40,.08);
     pointer-events:auto;
   }
-  .key-title{font-size:10px;font-weight:800;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
-  .key-help{font-size:8.5px;color:#667085;line-height:1.2;margin:-1px 0 5px}
-  .key-item{display:flex;align-items:center;gap:6px;font-size:10px;color:#344054;margin:2px 0;line-height:1.1;padding:3px 4px;border-radius:5px;cursor:pointer;user-select:none;transition:background .15s,box-shadow .15s,opacity .15s}
+  .key-header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:3px}
+  .key-title{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px}
+  .key-toggle{width:24px;height:24px;min-width:24px;padding:0;border:1px solid #d0d5dd;border-radius:6px;background:#fff;color:#344054;font-weight:900;line-height:1;display:grid;place-items:center;cursor:pointer}
+  .key-toggle:hover{background:#f2f4f7}
+  .key-help{width:100%;font-size:8.5px;color:#667085;line-height:1.25;margin:0 0 5px;white-space:normal}
+  .key-item{position:relative;display:flex;align-items:center;gap:6px;width:max-content;font-size:10px;color:#344054;margin:2px 0;line-height:1.1;padding:3px 4px;border-radius:5px;cursor:pointer;user-select:none;white-space:nowrap;transition:background .15s,box-shadow .15s,opacity .15s}
   .key-item:hover{background:#f2f4f7}
   .key-item.active{background:#eef3ff;box-shadow:inset 0 0 0 1px #9fb5ff;color:#163b9d;font-weight:800}
   .key-item.active::after{content:'✓';margin-left:auto;font-size:10px}
   .swatch{width:19px;height:6px;border-radius:2px;flex:0 0 auto}
+  .key.collapsed{width:36px!important;padding:4px}
+  .key.collapsed .key-header{display:block;margin:0 0 3px}
+  .key.collapsed .key-toggle{width:26px;height:26px;min-width:26px;margin:0 auto}
+  .key.collapsed .key-item{width:26px;height:26px;margin:3px auto;padding:3px;justify-content:center;gap:0}
+  .key.collapsed .key-label{display:none}
+  .key.collapsed .swatch{width:18px;height:18px;border-radius:5px}
+  .key.collapsed .key-item.active::after{position:absolute;right:-2px;top:-5px;margin:0;font-size:9px;background:#fff;border-radius:50%;width:13px;height:13px;display:grid;place-items:center;box-shadow:0 0 0 1px #9fb5ff}
   .seat.key-dimmed{opacity:.16;filter:grayscale(.65);box-shadow:none}
   .seat{transition:opacity .16s ease,filter .16s ease,box-shadow .16s ease}
-  .empty-key{font-size:10px;color:#98a2b3}
+  .empty-key{font-size:10px;color:#98a2b3;white-space:nowrap}
   .data-wrap{overflow:auto;border:1px solid var(--line);border-radius:10px;max-height:62vh}
   table{border-collapse:collapse;width:max-content;min-width:100%;font-size:12px;background:#fff}
   th,td{border:1px solid #e4e7ec;padding:5px 6px;vertical-align:middle}
@@ -199,13 +258,14 @@
   @media print{
     @page{size:A4 landscape;margin:4mm}
     html,body{background:#fff!important;width:100%;height:100%}
-    .topbar,.sidebar,.room-header .status,.toast{display:none!important}
+    .topbar,.sidebar,.room-header .view-switch,.toast{display:none!important}
     .workspace,.main{display:block!important;padding:0!important;margin:0!important;overflow:visible!important}
     .room-shell{width:100%!important;max-width:none!important;min-width:0!important;margin:0!important}
     .room-header{margin:0 0 1.5mm!important;height:6mm!important}
     .room-title{font-size:13pt!important}
     #room{width:100%!important;height:190mm!important;aspect-ratio:auto!important;border:1px solid #666!important;border-radius:0!important;box-shadow:none!important;print-color-adjust:exact;-webkit-print-color-adjust:exact}
     .seat{box-shadow:none!important;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+    .seat.key-dimmed{opacity:1!important;filter:none!important}
     .desk,.key,.colour-band,.colour-segment{print-color-adjust:exact;-webkit-print-color-adjust:exact}
   }
 </style>
@@ -328,9 +388,12 @@
       <div class="room-shell">
         <div class="room-header">
           <div class="room-title" id="roomTitle">Untitled seating plan</div>
-          <div class="status" id="roomStatus">0 desks</div>
+          <a class="view-switch" id="viewSwitch" href="#">Pupil View</a>
         </div>
         <div id="room" aria-label="Seating plan room">
+          <div class="pupil-decor plant plant-a" aria-hidden="true">🪴</div>
+          <div class="pupil-decor plant plant-b" aria-hidden="true">🪴</div>
+          <div class="pupil-decor plant plant-c" aria-hidden="true">🪴</div>
           <div class="key" id="keyBox"></div>
           <div class="desk" id="teacherDesk">Teacher desk</div>
         </div>
@@ -376,6 +439,8 @@
       displayFields: [],
       showFieldLabels: true,
       gridSize: 20,
+      viewMode: 'teacher',
+      keyCollapsed: false,
       seats: [],
       desk: { x: snap((ROOM_W - DESK_W)/2, 20), y: snap(ROOM_H - DESK_H - 20, 20) },
       rules: []
@@ -403,6 +468,7 @@
     return a.x < b.x+b.w+gap && a.x+a.w+gap > b.x && a.y < b.y+b.h+gap && a.y+a.h+gap > b.y;
   }
   function keyObstacle(){
+    if(state.viewMode !== 'teacher' || !state.keyCollapsed) return null;
     const room=$('room'), key=$('keyBox');
     if(!room || !key) return null;
     const rr=room.getBoundingClientRect(), kr=key.getBoundingClientRect();
@@ -513,6 +579,8 @@
       displayFields: Array.isArray(raw.displayFields) ? raw.displayFields.filter(f => unique.includes(f) && f !== 'Name') : unique.filter(f => f !== 'Name'),
       showFieldLabels: raw.showFieldLabels !== false,
       gridSize: [10,20,30,40].includes(+raw.gridSize) ? +raw.gridSize : 20,
+      viewMode: raw.viewMode === 'pupil' ? 'pupil' : 'teacher',
+      keyCollapsed: raw.keyCollapsed === true,
       seats,
       desk: {
         x: clamp(Number.isFinite(+(raw.desk && raw.desk.x)) ? +(raw.desk.x) : base.desk.x, 0, ROOM_W-DESK_W),
@@ -555,47 +623,95 @@
     const enabledRuleIds = new Set(state.rules.filter(r => r.enabled).map(r => r.id));
     activeRuleIds = new Set([...activeRuleIds].filter(id => enabledRuleIds.has(id)));
     const room = $('room');
+    const isPupil = state.viewMode === 'pupil';
+
+    room.classList.toggle('pupil-view',isPupil);
+    $('viewSwitch').textContent = isPupil ? 'Teacher View' : 'Pupil View';
     renderKey();
     resolveLayoutCollisions();
+
     room.querySelectorAll('.seat').forEach(el => el.remove());
-    for(const seat of state.seats){
+    const chairColours=['#69b7ff','#6fd08c','#ff7c73','#b58cff','#ffd15c','#ff9c54'];
+
+    state.seats.forEach((seat,index)=>{
       const el = document.createElement('div');
       const matches = matchingRules(seat);
       const matchIds = new Set(matches.map(r => r.id));
-      const dimmed = activeRuleIds.size > 0 && ![...activeRuleIds].every(id => matchIds.has(id));
+      const dimmed = !isPupil && activeRuleIds.size > 0 && ![...activeRuleIds].every(id => matchIds.has(id));
       el.className = 'seat' + (seat.id === selectedSeatId ? ' selected' : '') + (!String(seat.data.Name || '').trim() ? ' empty' : '') + (dimmed ? ' key-dimmed' : '');
       el.dataset.id = seat.id;
       el.style.left = (seat.x / ROOM_W * 100) + '%';
       el.style.top = (seat.y / ROOM_H * 100) + '%';
+      el.style.setProperty('--chair-color',chairColours[index % chairColours.length]);
 
       const name = String(seat.data.Name || '').trim();
-      const fields = state.displayFields.filter(f => f !== 'Name' && state.columns.includes(f));
-      const body = fields.map(f => {
-        const val = seat.data[f] ?? '';
-        return `<div class="seat-field">${state.showFieldLabels ? `<b>${escHtml(f)}:</b> ` : ''}${escHtml(val)}</div>`;
-      }).join('');
-      const band = matches.length
-        ? matches.map(r => `<div class="colour-segment" style="background:${escHtml(r.color)}" title="${escHtml(ruleLabel(r))}"></div>`).join('')
-        : '<div class="colour-segment" style="background:#e4e7ec"></div>';
-
-      el.innerHTML = `<div class="seat-name">${escHtml(name || 'Empty desk')}</div><div class="seat-fields">${body}</div><div class="colour-band">${band}</div>`;
+      if(isPupil){
+        el.innerHTML = `<div class="pupil-chair" aria-hidden="true">•‿•</div><div class="seat-name">${escHtml(name)}</div>`;
+      }else{
+        const fields = state.displayFields.filter(f => f !== 'Name' && state.columns.includes(f));
+        const body = fields.map(f => {
+          const val = seat.data[f] ?? '';
+          return `<div class="seat-field">${state.showFieldLabels ? `<b>${escHtml(f)}:</b> ` : ''}${escHtml(val)}</div>`;
+        }).join('');
+        const band = matches.length
+          ? matches.map(r => `<div class="colour-segment" style="background:${escHtml(r.color)}" title="${escHtml(ruleLabel(r))}"></div>`).join('')
+          : '<div class="colour-segment" style="background:#e4e7ec"></div>';
+        el.innerHTML = `<div class="seat-name">${escHtml(name || 'Empty desk')}</div><div class="seat-fields">${body}</div><div class="colour-band">${band}</div>`;
+      }
       room.appendChild(el);
-    }
+    });
 
     const desk = $('teacherDesk');
+    desk.textContent = isPupil ? 'Teacher' : 'Teacher desk';
     desk.style.left = (state.desk.x / ROOM_W * 100) + '%';
     desk.style.top = (state.desk.y / ROOM_H * 100) + '%';
+  }
 
-    $('roomStatus').textContent = `${state.seats.length} desk${state.seats.length===1?'':'s'} • ${state.columns.length} field${state.columns.length===1?'':'s'}`;
+  function sizeExpandedKeyToContent(){
+    const key=$('keyBox');
+    if(state.keyCollapsed || state.viewMode !== 'teacher') return;
+    key.style.width='auto';
+    const widths=[...key.querySelectorAll('.key-header,.key-item')].map(el=>el.scrollWidth);
+    const contentWidth=Math.max(48,...widths);
+    key.style.width=Math.ceil(contentWidth + 16)+'px';
   }
 
   function renderKey(){
+    const key=$('keyBox');
     const active = state.rules.filter(r => r.enabled);
     const validIds = new Set(active.map(r => r.id));
     activeRuleIds = new Set([...activeRuleIds].filter(id => validIds.has(id)));
-    $('keyBox').innerHTML = `<div class="key-title">Key</div>` + (active.length
-      ? `<div class="key-help">Click colours to highlight. Multiple selections show the intersection.</div>` + active.map(r => `<div class="key-item ${activeRuleIds.has(r.id)?'active':''}" data-key-rule="${escHtml(r.id)}" title="Click to ${activeRuleIds.has(r.id)?'remove':'add'} this highlight"><span class="swatch" style="background:${escHtml(r.color)}"></span><span>${escHtml(ruleLabel(r))}</span></div>`).join('')
+    key.classList.toggle('collapsed',state.keyCollapsed);
+
+    if(state.keyCollapsed){
+      key.innerHTML = `<div class="key-header"><button class="key-toggle" data-key-toggle title="Expand key" aria-label="Expand key">+</button></div>` +
+        active.map(r => `<div class="key-item ${activeRuleIds.has(r.id)?'active':''}" data-key-rule="${escHtml(r.id)}" title="${escHtml(ruleLabel(r))}"><span class="swatch" style="background:${escHtml(r.color)}"></span><span class="key-label">${escHtml(ruleLabel(r))}</span></div>`).join('');
+      key.style.width='36px';
+      return;
+    }
+
+    key.innerHTML = `<div class="key-header"><div class="key-title">Key</div><button class="key-toggle" data-key-toggle title="Collapse key" aria-label="Collapse key">−</button></div>` + (active.length
+      ? `<div class="key-help">Click colours to highlight. Multiple selections show the intersection.</div>` + active.map(r => `<div class="key-item ${activeRuleIds.has(r.id)?'active':''}" data-key-rule="${escHtml(r.id)}" title="Click to ${activeRuleIds.has(r.id)?'remove':'add'} this highlight"><span class="swatch" style="background:${escHtml(r.color)}"></span><span class="key-label">${escHtml(ruleLabel(r))}</span></div>`).join('')
       : '<div class="empty-key">No colour rules</div>');
+    sizeExpandedKeyToContent();
+  }
+
+  function switchView(){
+    if(state.viewMode === 'teacher'){
+      activeRuleIds.clear();
+      state.viewMode='pupil';
+    }else{
+      state.viewMode='teacher';
+    }
+    selectedSeatId=null;
+    renderRoom();
+    queueDraft();
+  }
+
+  function toggleKeyCollapsed(){
+    state.keyCollapsed=!state.keyCollapsed;
+    renderRoom();
+    queueDraft();
   }
 
   function clearRuleHighlights(){
@@ -1129,6 +1245,7 @@
   $('addSeatTopBtn').addEventListener('click',()=>addSeat());
   $('addSeatDataBtn').addEventListener('click',()=>addSeat());
   $('settingsToggleBtn').addEventListener('click',()=>setSettingsHidden(!document.querySelector('.workspace').classList.contains('settings-hidden')));
+  $('viewSwitch').addEventListener('click',e=>{e.preventDefault();switchView();});
   $('printBtn').addEventListener('click',()=>window.print());
   $('csvInput').addEventListener('change',async e=>{
     const file=e.target.files[0];
@@ -1206,6 +1323,8 @@
   });
 
   $('keyBox').addEventListener('click',e=>{
+    const toggle=e.target.closest('[data-key-toggle]');
+    if(toggle){ e.stopPropagation(); toggleKeyCollapsed(); return; }
     const item=e.target.closest('[data-key-rule]');
     if(!item)return;
     e.stopPropagation();
