@@ -266,13 +266,13 @@
     width:max-content;min-width:0;max-width:none;
     background:rgba(255,255,255,.96);
     border:1px solid #98a2b3;
-    border-radius:9px;padding:6px 8px;
+    border-radius:9px;padding:4px;
     box-shadow:0 2px 8px rgba(16,24,40,.08);
     pointer-events:auto;
   }
-  .key-header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:3px}
+  .key-header{display:flex;align-items:center;justify-content:flex-start;gap:8px;margin-bottom:3px}
   .key-title{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px}
-  .key-toggle{width:24px;height:24px;min-width:24px;padding:0;border:1px solid #d0d5dd;border-radius:6px;background:#fff;color:#344054;font-weight:900;line-height:1;display:grid;place-items:center;cursor:pointer}
+  .key-toggle{width:26px;height:26px;min-width:26px;padding:0;border:1px solid #d0d5dd;border-radius:6px;background:#fff;color:#344054;font-weight:900;line-height:1;display:grid;place-items:center;cursor:pointer}
   .key-toggle:hover{background:#f2f4f7}
   .key-help{width:100%;font-size:8.5px;color:#667085;line-height:1.25;margin:0 0 5px;white-space:normal}
   .key-item{position:relative;display:flex;align-items:center;gap:6px;width:max-content;font-size:10px;color:#344054;margin:2px 0;line-height:1.1;padding:3px 4px;border-radius:5px;cursor:pointer;user-select:none;white-space:nowrap;transition:background .15s,box-shadow .15s,opacity .15s}
@@ -280,13 +280,23 @@
   .key-item.active{background:#eef3ff;box-shadow:inset 0 0 0 1px #9fb5ff;color:#163b9d;font-weight:800}
   .key-item.active::after{content:'✓';margin-left:auto;font-size:10px}
   .swatch{width:19px;height:6px;border-radius:2px;flex:0 0 auto}
-  .key.collapsed{width:36px!important;padding:4px}
-  .key.collapsed .key-header{display:block;margin:0 0 3px}
-  .key.collapsed .key-toggle{width:26px;height:26px;min-width:26px;margin:0 auto}
-  .key.collapsed .key-item{width:26px;height:26px;margin:3px auto;padding:3px;justify-content:center;gap:0}
+  .key.collapsed{
+    width:36px!important;height:36px;padding:4px;overflow:hidden;
+    transition:height .2s ease,box-shadow .2s ease;
+  }
+  .key.collapsed .key-header{margin:0}
+  .key.collapsed .key-toggle{margin:0}
+  .key.collapsed .key-item{width:26px;height:26px;margin:5px 0 0;padding:3px;justify-content:center;gap:0}
   .key.collapsed .key-label{display:none}
   .key.collapsed .swatch{width:18px;height:18px;border-radius:5px}
   .key.collapsed .key-item.active::after{position:absolute;right:-2px;top:-5px;margin:0;font-size:9px;background:#fff;border-radius:50%;width:13px;height:13px;display:grid;place-items:center;box-shadow:0 0 0 1px #9fb5ff}
+  .key.collapsed:not(.preview) .key-item{opacity:0;visibility:hidden;pointer-events:none}
+  .key.collapsed.preview{height:var(--preview-height,36px);box-shadow:0 7px 22px rgba(16,24,40,.20)}
+  .key.collapsed.preview .key-item{animation:key-preview-appear .2s ease both}
+  @keyframes key-preview-appear{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
+  .print-key{display:none}
+  .print-key-item{display:inline-flex;align-items:center;gap:1.5mm;white-space:nowrap;font-size:9pt;color:#344054}
+  .print-key-swatch{display:inline-block;width:6mm;height:2.6mm;border:1px solid #64748b;border-radius:1mm;flex:none}
   .seat.key-dimmed{opacity:.16;filter:grayscale(.65);box-shadow:none}
   .seat{transition:opacity .16s ease,filter .16s ease,box-shadow .16s ease}
   .empty-key{font-size:10px;color:#98a2b3;white-space:nowrap}
@@ -353,13 +363,16 @@
     html,body{background:#fff!important;width:100%;height:100%}
     .topbar,.sidebar,.room-header .view-switch,.toast{display:none!important}
     .workspace,.main{display:block!important;padding:0!important;margin:0!important;overflow:visible!important}
-    .room-shell{width:100%!important;max-width:none!important;min-width:0!important;margin:0!important}
-    .room-header{margin:0 0 1.5mm!important;height:6mm!important}
+    .room-shell{display:flex!important;flex-direction:column!important;width:100%!important;height:198mm!important;max-width:none!important;min-width:0!important;margin:0!important}
+    .room-header{flex:0 0 6mm!important;margin:0 0 1.5mm!important;height:6mm!important}
     .room-title{font-size:13pt!important}
-    #room{width:100%!important;height:190mm!important;aspect-ratio:auto!important;border:1px solid #666!important;border-radius:0!important;box-shadow:none!important;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+    #room{width:100%!important;height:auto!important;min-height:0!important;flex:1 1 0!important;aspect-ratio:auto!important;border:1px solid #666!important;border-radius:0!important;box-shadow:none!important;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+    #room .key{display:none!important}
+    .print-key{display:flex!important;flex:0 0 auto!important;flex-wrap:wrap;align-content:flex-start;align-items:center;column-gap:5mm;row-gap:1mm;padding:2mm 1mm 0!important;max-height:25mm;overflow:hidden;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+    .print-key-item,.print-key-swatch{print-color-adjust:exact;-webkit-print-color-adjust:exact}
     .seat{box-shadow:none!important;print-color-adjust:exact;-webkit-print-color-adjust:exact}
     .seat.key-dimmed{opacity:1!important;filter:none!important}
-    .desk,.key,.colour-band,.colour-segment{print-color-adjust:exact;-webkit-print-color-adjust:exact}
+    .desk,.colour-band,.colour-segment{print-color-adjust:exact;-webkit-print-color-adjust:exact}
   }
 </style>
 </head>
@@ -490,6 +503,7 @@
           <div class="key" id="keyBox"></div>
           <div class="desk" id="teacherDesk">Teacher desk</div>
         </div>
+        <div class="print-key" id="printKey" aria-hidden="true"></div>
       </div>
     </main>
   </div>
@@ -516,6 +530,7 @@
   let state = freshState();
   let selectedSeatId = null;
   let activeRuleIds = new Set();
+  let keyPreview = false;
   let drag = null;
   let draftTimer = null;
 
@@ -573,16 +588,17 @@
     return a.x < b.x+b.w+gap && a.x+a.w+gap > b.x && a.y < b.y+b.h+gap && a.y+a.h+gap > b.y;
   }
   function keyObstacle(){
-    if(state.viewMode !== 'teacher' || !state.keyCollapsed) return null;
-    const room=$('room'), key=$('keyBox');
-    if(!room || !key) return null;
-    const rr=room.getBoundingClientRect(), kr=key.getBoundingClientRect();
-    if(!rr.width || !rr.height || !kr.width || !kr.height) return null;
+    // The permanent + button footprint is reserved, never the larger key.
+    // Keep this reservation even in pupil view to prevent desk movement on switching.
+    const room=$('room');
+    if(!room) return null;
+    const rr=room.getBoundingClientRect();
+    if(!rr.width || !rr.height) return null;
     return {
-      x:(kr.left-rr.left)/rr.width*ROOM_W,
-      y:(kr.top-rr.top)/rr.height*ROOM_H,
-      w:kr.width/rr.width*ROOM_W,
-      h:kr.height/rr.height*ROOM_H
+      x:ROOM_W*0.012,
+      y:ROOM_H*0.014,
+      w:36/rr.width*ROOM_W,
+      h:36/rr.height*ROOM_H
     };
   }
   function positionIsAvailable(type,id,x,y){
@@ -621,7 +637,7 @@
     // Keep the teacher desk within the snap grid. Student desks treat it as a fixed obstacle.
     const teacher=snapInside('desk',state.desk.x,state.desk.y);
     if(teacher.x!==state.desk.x || teacher.y!==state.desk.y){ state.desk={...state.desk,...teacher}; changed=true; }
-    // If the teacher desk itself is under the key, move it to the nearest valid space first.
+    // Only the permanently reserved + button area can move a desk.
     const key=keyObstacle();
     const td=teacherDeskSize();
     if(key && rectsOverlap({x:state.desk.x,y:state.desk.y,w:td.w,h:td.h},key,KEY_GAP)){
