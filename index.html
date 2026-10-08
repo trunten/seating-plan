@@ -23,26 +23,35 @@
   button,input,select{font:inherit}
   button{cursor:pointer}
   .app{min-height:100vh;display:grid;grid-template-rows:auto 1fr}
-  .topbar{position:sticky;top:0;z-index:50;background:#fff;color:var(--ink);padding:10px 16px;display:grid;grid-template-columns:minmax(220px,1fr) auto;align-items:stretch;gap:20px;border-bottom:1px solid var(--line);box-shadow:0 2px 10px rgba(16,24,40,.08)}
+  .topbar{position:sticky;top:0;z-index:50;background:#fff;color:var(--ink);padding:6px 12px;display:grid;grid-template-columns:minmax(180px,1fr) auto;align-items:stretch;gap:14px;border-bottom:1px solid var(--line);box-shadow:0 2px 10px rgba(16,24,40,.08)}
   .brand-wrap{display:flex;align-items:stretch;justify-content:flex-start;min-width:0;overflow:hidden}
-  .brand-logo{display:block;height:100%;max-height:84px;width:auto;max-width:100%;object-fit:contain;object-position:left center}
+  .brand-logo{display:block;height:100%;max-height:64px;width:auto;max-width:100%;object-fit:contain;object-position:left center}
   .brand-compact{display:none}
-  .topbar-controls{width:min(520px,52vw);min-width:0;display:grid;grid-template-rows:38px 38px;gap:8px;align-self:center;justify-self:end}
-  .topbar-row{width:100%;display:grid;align-items:stretch;gap:8px}
-  .topbar-row.primary-row{grid-template-columns:minmax(0,1fr) 132px}
+  .topbar-controls{width:min(550px,58vw);min-width:0;display:grid;grid-template-rows:30px 30px;gap:4px;align-self:center;justify-self:end}
+  .topbar-row{width:100%;display:grid;align-items:stretch;gap:5px}
+  .topbar-row.primary-row{grid-template-columns:minmax(0,1fr) 76px 34px}
   .topbar-row.secondary-row{grid-template-columns:repeat(4,minmax(0,1fr))}
-  .plan-name{width:100%;min-width:0;height:38px;background:#fff;color:#101828;border:1px solid var(--line);border-radius:9px;padding:0 11px;box-shadow:0 1px 2px rgba(16,24,40,.04)}
-  .topbar .btn{height:38px;min-width:0;padding:0 10px;background:#f8fafc;color:#344054;border:1px solid var(--line);white-space:nowrap}
+  .plan-name{width:100%;min-width:0;height:30px;background:#fff;color:#101828;border:1px solid var(--line);border-radius:9px;padding:0 11px;box-shadow:0 1px 2px rgba(16,24,40,.04)}
+  .topbar .btn{height:30px;min-width:0;padding:0 7px;font-size:12px;background:#f8fafc;color:#344054;border:1px solid var(--line);white-space:nowrap}
   .topbar .btn:hover{background:#f2f4f7}
   .topbar .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
   .topbar .btn.primary:hover{background:var(--accent-2)}
   .topbar .btn.danger{background:#fff;color:var(--danger);border-color:#f0b9b4}
-  .workspace{display:grid;grid-template-columns:350px minmax(0,1fr);min-height:0}
-  .workspace.settings-hidden{grid-template-columns:minmax(0,1fr)}
-  .workspace.settings-hidden .sidebar{display:none}
-  .sidebar{background:var(--panel);border-right:1px solid var(--line);min-height:0;overflow:auto;padding:14px}
-  .main{min-width:0;overflow:auto;padding:18px}
-  .tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}
+  .topbar .btn.icon-only{display:grid;place-items:center;padding:0}
+  .topbar .btn.icon-only svg{width:17px;height:17px;stroke:currentColor;stroke-width:2.4;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .workspace{display:grid;grid-template-columns:350px minmax(0,1fr);min-height:0;transition:grid-template-columns .3s ease}
+  .workspace.settings-hidden{grid-template-columns:44px minmax(0,1fr)}
+  .sidebar{grid-column:1;grid-row:1;background:var(--panel);border-right:1px solid var(--line);min-width:0;min-height:0;overflow:auto;padding:14px;opacity:1;transition:opacity .18s ease,padding .3s ease}
+  .workspace.settings-hidden .sidebar{overflow:hidden;opacity:0;pointer-events:none;padding:14px 0}
+  .settings-rail{grid-column:1;grid-row:1;display:flex;align-items:center;justify-content:center;width:100%;min-width:0;padding:10px 4px;border:0;border-right:1px solid var(--line);background:#eaf0ff;color:#2457d6;font-weight:800;cursor:pointer;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .2s ease}
+  .workspace.settings-hidden .settings-rail{opacity:1;visibility:visible;pointer-events:auto}
+  .settings-rail-content{display:flex;align-items:center;gap:9px;writing-mode:vertical-rl;transform:rotate(180deg);white-space:nowrap;letter-spacing:.3px}
+  .settings-rail-chevron{font-size:20px;line-height:1;display:inline-block;transform:rotate(180deg)}
+  .settings-rail:hover{background:#dce8ff}
+  .main{grid-column:2;grid-row:1;min-width:0;overflow:auto;padding:18px}
+  .tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr)) 28px;gap:5px;margin-bottom:12px}
+  .settings-close{width:28px;height:33px;border:1px solid var(--line);border-radius:8px;background:#fff;color:#475467;font-size:19px;font-weight:700;cursor:pointer}
+  .settings-close:hover{background:#f2f4f7}
   .tab{border:1px solid var(--line);background:#f9fafb;border-radius:9px;padding:8px 6px;font-size:12px;font-weight:700;color:#475467}
   .tab.active{background:#eaf0ff;border-color:#9fb5ff;color:#163b9d}
   .panel{display:none}
@@ -329,34 +338,36 @@
   .toast{position:fixed;right:18px;bottom:18px;z-index:1000;background:#101828;color:#fff;border-radius:9px;padding:10px 12px;box-shadow:0 8px 24px rgba(0,0,0,.18);font-size:13px;opacity:0;transform:translateY(8px);pointer-events:none;transition:.2s}
   .toast.show{opacity:1;transform:translateY(0)}
   @media(max-width:950px){
-    .topbar{grid-template-columns:minmax(150px,1fr) auto;gap:10px;padding:8px 10px}
-    .brand-logo{max-height:78px}
-    .topbar-controls{width:min(500px,64vw);grid-template-rows:36px 36px;gap:6px}
-    .topbar-row{gap:6px}
-    .plan-name,.topbar .btn{height:36px}
-    .topbar .btn{padding:0 7px;font-size:12px}
-    .topbar-row.primary-row{grid-template-columns:minmax(0,1fr) 118px}
-    .workspace{grid-template-columns:1fr}
-    .workspace.settings-hidden{grid-template-columns:1fr}
-    .sidebar{border-right:0;border-bottom:1px solid var(--line);max-height:none}
-    .main{padding:12px}
+    .topbar{grid-template-columns:minmax(125px,1fr) auto;gap:8px;padding:5px 9px}
+    .brand-logo{max-height:60px}
+    .topbar-controls{width:min(510px,68vw);grid-template-rows:29px 29px;gap:4px}
+    .plan-name,.topbar .btn{height:29px}
+    .topbar .btn{padding:0 6px;font-size:11px}
+    .topbar-row.primary-row{grid-template-columns:minmax(0,1fr) 65px 32px}
+    .workspace,.workspace.settings-hidden{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr)}
+    .sidebar{grid-column:1;grid-row:1;border-right:0;border-bottom:1px solid var(--line);max-height:3000px;overflow:hidden;transition:max-height .3s ease,opacity .2s ease,padding .3s ease}
+    .workspace.settings-hidden .sidebar{max-height:0;padding:0;visibility:hidden}
+    .settings-rail{grid-column:1;grid-row:1;justify-content:center;height:38px;padding:5px;border:0;border-bottom:1px solid var(--line)}
+    .settings-rail-content{writing-mode:horizontal-tb;transform:none}
+    .settings-rail-chevron{transform:rotate(90deg)}
+    .main{grid-column:1;grid-row:2;padding:12px}
     .room-shell{min-width:700px}
   }
   @media(max-width:640px){
-    .topbar{grid-template-columns:92px minmax(0,1fr);gap:8px;padding:7px 8px}
+    .topbar{grid-template-columns:70px minmax(0,1fr);gap:6px;padding:4px 6px}
     .brand-logo{display:none}
-    .brand-compact{display:flex;width:92px;height:78px;flex-direction:column;align-items:center;justify-content:center;gap:2px;overflow:hidden}
-    .brand-compact-icon{display:block;width:46px;height:46px;object-fit:contain}
-    .brand-compact-word{font-weight:900;font-size:15px;line-height:1;letter-spacing:-.3px;white-space:nowrap}
+    .brand-compact{display:flex;width:70px;height:57px;flex-direction:column;align-items:center;justify-content:center;gap:1px;overflow:hidden}
+    .brand-compact-icon{display:block;width:32px;height:32px;object-fit:contain}
+    .brand-compact-word{font-weight:900;font-size:12px;line-height:1;letter-spacing:-.3px;white-space:nowrap}
     .brand-compact-word .desk-word{color:#243650}
     .brand-compact-word .buddy-word{color:#2f80ed}
-    .topbar-controls{width:100%;min-width:0;grid-template-rows:34px 34px;gap:5px}
+    .topbar-controls{width:100%;min-width:0;grid-template-rows:27px 27px;gap:3px}
     .topbar-row{gap:5px}
-    .topbar-row.primary-row{grid-template-columns:minmax(0,1fr) 96px}
+    .topbar-row.primary-row{grid-template-columns:minmax(0,1fr) 48px 28px}
     .topbar-row.secondary-row{grid-template-columns:repeat(4,minmax(0,1fr))}
-    .plan-name,.topbar .btn{height:34px}
+    .plan-name,.topbar .btn{height:27px}
     .plan-name{padding:0 8px;font-size:12px}
-    .topbar .btn{padding:0 4px;font-size:10px}
+    .topbar .btn{padding:0 3px;font-size:9px}
   }
   @media print{
     @page{size:A4 landscape;margin:4mm}
@@ -389,12 +400,13 @@
     <div class="topbar-controls">
       <div class="topbar-row primary-row">
         <input id="planName" class="plan-name" value="Untitled seating plan" aria-label="Plan name">
-        <button class="btn primary" id="saveBtn">Save locally</button>
+        <button class="btn primary" id="saveBtn">Save</button>
+        <button class="btn primary icon-only" id="downloadPlanBtn" aria-label="Download" title="Download saved plan"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 17v4h16v-4"/></svg></button>
       </div>
       <div class="topbar-row secondary-row">
         <button class="btn" id="newBtn">New plan</button>
         <button class="btn" id="addSeatTopBtn">+ Empty desk</button>
-        <button class="btn" id="settingsToggleBtn" aria-pressed="false">Hide settings</button>
+        <button class="btn" id="excelTopBtn">Export Excel</button>
         <button class="btn" id="printBtn">Print A4</button>
       </div>
     </div>
@@ -407,6 +419,7 @@
         <button class="tab" data-tab="data">Data</button>
         <button class="tab" data-tab="design">Desk</button>
         <button class="tab" data-tab="rules">Colours</button>
+        <button class="settings-close" id="settingsCloseBtn" type="button" title="Hide settings" aria-label="Hide settings">×</button>
       </div>
 
       <section class="panel active" id="panel-plan">
@@ -417,17 +430,6 @@
             <strong>Drop a CSV or saved plan here</strong>
             <span class="dropzone-sub">or click / tap to choose a file</span>
           </div>
-        </div>
-
-        <div class="section">
-          <h2>Portable files & Excel</h2>
-          <div class="button-row">
-            <button class="btn" id="exportPlanBtn">Export saved plan</button>
-            <button class="btn" id="importPlanBtn">Import saved plan</button>
-            <button class="btn" id="excelBtn">Export Excel</button>
-          </div>
-          <input id="planInput" type="file" accept=".json,.seatplan,.seatingplan,application/json" class="hidden">
-          <div class="notice">The portable saved-plan file contains the data, desk positions, teacher-desk position, desk design and colour rules, so it can be moved to another computer.</div>
         </div>
 
         <div class="section">
@@ -489,6 +491,7 @@
         </div>
       </section>
     </aside>
+    <button class="settings-rail" id="settingsOpenBtn" type="button" aria-label="Open Settings"><span class="settings-rail-content"><span class="settings-rail-chevron" aria-hidden="true">»</span><span>Open Settings</span></span></button>
 
     <main class="main">
       <div class="room-shell">
@@ -1648,11 +1651,11 @@
 
   function setSettingsHidden(hidden){
     const workspace=document.querySelector('.workspace');
-    const btn=$('settingsToggleBtn');
     workspace.classList.toggle('settings-hidden',hidden);
-    btn.textContent=hidden?'Show settings':'Hide settings';
-    btn.setAttribute('aria-pressed',hidden?'true':'false');
-    requestAnimationFrame(()=>renderRoom());
+    $('settingsOpenBtn').setAttribute('aria-expanded',hidden?'false':'true');
+    $('settingsCloseBtn').setAttribute('aria-expanded',hidden?'false':'true');
+    // The room itself reflows via CSS; no seat positions are changed.
+    requestAnimationFrame(()=>fitAllSeatContents());
   }
 
   // Events
@@ -1662,7 +1665,8 @@
   $('newBtn').addEventListener('click',newPlan);
   $('addSeatTopBtn').addEventListener('click',()=>addSeat());
   $('addSeatDataBtn').addEventListener('click',()=>addSeat());
-  $('settingsToggleBtn').addEventListener('click',()=>setSettingsHidden(!document.querySelector('.workspace').classList.contains('settings-hidden')));
+  $('settingsCloseBtn').addEventListener('click',()=>setSettingsHidden(true));
+  $('settingsOpenBtn').addEventListener('click',()=>setSettingsHidden(false));
   $('viewSwitch').addEventListener('click',e=>{e.preventDefault();switchView();});
   $('printBtn').addEventListener('click',()=>window.print());
   $('csvInput').addEventListener('change',async e=>{
@@ -1675,10 +1679,8 @@
     }
     e.target.value='';
   });
-  $('exportPlanBtn').addEventListener('click',exportPortable);
-  $('importPlanBtn').addEventListener('click',()=>$('planInput').click());
-  $('planInput').addEventListener('change',async e=>{if(e.target.files[0])await importPortableFile(e.target.files[0]);e.target.value='';});
-  $('excelBtn').addEventListener('click',exportExcel);
+  $('downloadPlanBtn').addEventListener('click',exportPortable);
+  $('excelTopBtn').addEventListener('click',exportExcel);
   $('autoArrangeBtn').addEventListener('click',autoArrange);
   $('resetDeskBtn').addEventListener('click',resetDesk);
   $('gridSize').addEventListener('change',e=>{state.gridSize=+e.target.value;renderRoom();queueDraft();});
