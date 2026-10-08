@@ -223,7 +223,13 @@
     display:flex;align-items:center;justify-content:center;
     pointer-events:none;z-index:5;
   }
-  #room.pupil-view .pupil-desk-name .seat-name{max-height:100%}
+  #room.pupil-view .pupil-desk-name .seat-name{max-height:100%;font-weight:750}
+  /* A single, legible given name beats clipped overlapping lines on phones. */
+  #room.pupil-view .pupil-desk-name.pupil-short-name{align-items:flex-start}
+  #room.pupil-view .pupil-desk-name.pupil-short-name .seat-name{
+    white-space:nowrap;display:block;overflow:hidden;text-overflow:ellipsis;
+    font-weight:700;max-height:100%;
+  }
   #room.pupil-view .pupil-desk-apron{
     display:block;position:absolute;left:8%;right:8%;top:61%;height:25%;
     background:var(--desk-color,#ff5f68);
@@ -243,7 +249,7 @@
   #room.pupil-view .pupil-desk-leg.right{right:12%}
   #room.pupil-view .seat-name{
     position:static;z-index:auto;height:auto;padding:0;min-width:0;max-width:100%;
-    color:#192a43;font-size:14px;font-weight:900;
+    color:#192a43;font-size:14px;font-weight:750;
     text-shadow:0 1px 0 rgba(255,255,255,.75);
   }
   #room.pupil-view .desk{
@@ -356,8 +362,11 @@
   .swatch{width:19px;height:6px;border-radius:2px;flex:0 0 auto}
   .key.collapsed{
     width:36px!important;height:36px;padding:4px;overflow:hidden;
-    transition:height .2s ease,box-shadow .2s ease;
+    opacity:.36;
+    transition:height .2s ease,box-shadow .2s ease,opacity .15s ease;
   }
+  /* Collapsed key is deliberately only an overlay, not reserved room space. */
+  .key.collapsed:hover,.key.collapsed.preview,.key.collapsed:focus-within{opacity:1}
   .key.collapsed .key-header{margin:0}
   .key.collapsed .key-toggle{margin:0}
   .key.collapsed .key-item{width:26px;height:26px;margin:5px 0 0;padding:3px;justify-content:center;gap:0}
@@ -422,8 +431,8 @@
     .topbar{grid-template-columns:70px minmax(0,1fr);gap:6px;padding:4px 6px}
     .brand-logo{display:none}
     .brand-compact{display:flex;width:70px;height:57px;flex-direction:column;align-items:center;justify-content:center;gap:1px;overflow:hidden}
-    .brand-compact-icon{display:block;flex:0 0 66px;width:66px;height:41px;background:url("./deskbuddy-logo.png") no-repeat -8px -12px / 210px auto}
-    .brand-compact-word{font-weight:900;font-size:12px;line-height:1;letter-spacing:-.3px;white-space:nowrap}
+    .brand-compact-icon{display:block;flex:0 0 41px;width:66px;height:41px;background:url("./deskbuddy-logo.png") no-repeat -8px -12px / 210px auto}
+    .brand-compact-word{display:block;flex:0 0 13px;font-weight:900;font-size:12px;line-height:13px;letter-spacing:-.3px;white-space:nowrap}
     .brand-compact-word .desk-word{color:#243650}
     .brand-compact-word .buddy-word{color:#2f80ed}
     .topbar-controls{--control-gap:3px;--download-width:24px;width:100%;min-width:0;grid-template-rows:27px 27px;gap:3px}
@@ -646,19 +655,20 @@
 
   function maxSafeZoom(){
     const b=layoutBounds(), w=b.right-b.left,h=b.bottom-b.top;
-    // Leave a small margin: no desk can ever disappear beyond the edge.
-    return Math.max(1,Math.min(2,(ROOM_W-24)/w,(ROOM_H-24)/h));
+    // A desk moved into newly revealed space can limit subsequent zoom-in.
+    // Never force a minimum of 100%: doing so would hide those desks.
+    return Math.max(.5,Math.min(2,(ROOM_W-24)/Math.max(w,1),(ROOM_H-24)/Math.max(h,1)));
   }
 
   function calculateCamera(){
-    const z=printingUnzoomed?1:planZoom;
-    const width=ROOM_W/z,height=ROOM_H/z;
-    let left=(ROOM_W-width)/2,top=(ROOM_H-height)/2;
-    if(z>1){
-      const b=layoutBounds();
-      left=clamp((b.left+b.right-width)/2,b.right-width,b.left);
-      top=clamp((b.top+b.bottom-height)/2,b.bottom-height,b.top);
-    }
+    // Printing also fits desks placed outside the initial room footprint.
+    const z=printingUnzoomed?Math.min(1,maxSafeZoom()):planZoom;
+    const width=ROOM_W/z,height=ROOM_H/z,b=layoutBounds();
+    const centredLeft=(ROOM_W-width)/2,centredTop=(ROOM_H-height)/2;
+    // Keep the original centre where possible, but pan just enough to
+    // include an extended classroom and all pupil/teacher desks.
+    const left=clamp(centredLeft,b.right-width,b.left);
+    const top=clamp(centredTop,b.bottom-height,b.top);
     return {left,top,width,height,zoom:z};
   }
 
@@ -762,7 +772,6 @@
 
   function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
   const COLLISION_GAP = 8;
-  const KEY_GAP = 10;
 
   function teacherDeskSize(orientation = state.desk.orientation){
     return orientation === 'vertical' ? {w:DESK_H,h:DESK_W} : {w:DESK_W,h:DESK_H};
@@ -778,34 +787,24 @@
     return top <= bottom ? 'down' : 'up';
   }
   function gridMax(type){
-    const {w,h}=itemSize(type), step=state.gridSize;
-    return {x:Math.floor((ROOM_W-w)/step)*step,y:Math.floor((ROOM_H-h)/step)*step};
+    const {w,h}=itemSize(type),step=state.gridSize;
+    // Editing bounds are the current camera, including the additional
+    // physical workspace revealed by zooming out below 100%.
+    const xMin=Math.ceil(roomCamera.left/step)*step;
+    const yMin=Math.ceil(roomCamera.top/step)*step;
+    const xMax=Math.floor((roomCamera.left+roomCamera.width-w)/step)*step;
+    const yMax=Math.floor((roomCamera.top+roomCamera.height-h)/step)*step;
+    return {minX:xMin,minY:yMin,x:Math.max(xMin,xMax),y:Math.max(yMin,yMax)};
   }
   function snapInside(type,x,y){
     const m=gridMax(type);
-    return {x:clamp(snap(x),0,m.x),y:clamp(snap(y),0,m.y)};
+    return {x:clamp(snap(x),m.minX,m.x),y:clamp(snap(y),m.minY,m.y)};
   }
   function rectsOverlap(a,b,gap=0){
     return a.x < b.x+b.w+gap && a.x+a.w+gap > b.x && a.y < b.y+b.h+gap && a.y+a.h+gap > b.y;
   }
-  function keyObstacle(){
-    // The permanent + button footprint is reserved, never the larger key.
-    // Keep this reservation even in pupil view to prevent desk movement on switching.
-    const room=$('room');
-    if(!room) return null;
-    const rr=room.getBoundingClientRect();
-    if(!rr.width || !rr.height) return null;
-    return {
-      x:ROOM_W*0.012,
-      y:ROOM_H*0.014,
-      w:36/rr.width*ROOM_W,
-      h:36/rr.height*ROOM_H
-    };
-  }
   function positionIsAvailable(type,id,x,y){
     const {w,h}=itemSize(type), rect={x,y,w,h};
-    const key=keyObstacle();
-    if(key && rectsOverlap(rect,key,KEY_GAP)) return false;
     if(type==='desk'){
       for(const s of state.seats){
         if(rectsOverlap(rect,{x:s.x,y:s.y,w:SEAT_W,h:SEAT_H},COLLISION_GAP)) return false;
@@ -823,8 +822,8 @@
   function nearestAvailablePosition(type,id,targetX,targetY){
     const step=state.gridSize, max=gridMax(type), target=snapInside(type,targetX,targetY);
     const candidates=[];
-    for(let y=0;y<=max.y;y+=step){
-      for(let x=0;x<=max.x;x+=step){
+    for(let y=max.minY;y<=max.y;y+=step){
+      for(let x=max.minX;x<=max.x;x+=step){
         const dx=x-target.x,dy=y-target.y;
         candidates.push({x,y,d:dx*dx+dy*dy});
       }
@@ -838,13 +837,6 @@
     // Keep the teacher desk within the snap grid. Student desks treat it as a fixed obstacle.
     const teacher=snapInside('desk',state.desk.x,state.desk.y);
     if(teacher.x!==state.desk.x || teacher.y!==state.desk.y){ state.desk={...state.desk,...teacher}; changed=true; }
-    // Only the permanently reserved + button area can move a desk.
-    const key=keyObstacle();
-    const td=teacherDeskSize();
-    if(key && rectsOverlap({x:state.desk.x,y:state.desk.y,w:td.w,h:td.h},key,KEY_GAP)){
-      const p=nearestAvailablePosition('desk',null,state.desk.x,state.desk.y);
-      if(p){ state.desk={...state.desk,...p}; changed=true; }
-    }
     for(const s of state.seats){
       const snapped=snapInside('seat',s.x,s.y);
       const needsMove=snapped.x!==s.x || snapped.y!==s.y || !positionIsAvailable('seat',s.id,snapped.x,snapped.y);
@@ -893,8 +885,9 @@
       unique.forEach(c => data[c] = s && s.data && s.data[c] != null ? String(s.data[c]) : '');
       return {
         id: s && s.id ? String(s.id) : uid(),
-        x: clamp(Number.isFinite(+s.x) ? +s.x : 40 + (i%5)*210, 0, ROOM_W-SEAT_W),
-        y: clamp(Number.isFinite(+s.y) ? +s.y : 80 + Math.floor(i/5)*130, 0, ROOM_H-SEAT_H),
+        // Preserve expanded-world positions when reopening a saved plan.
+        x: clamp(Number.isFinite(+s.x) ? +s.x : 40 + (i%5)*210, -ROOM_W/2, ROOM_W*1.5-SEAT_W),
+        y: clamp(Number.isFinite(+s.y) ? +s.y : 80 + Math.floor(i/5)*130, -ROOM_H/2, ROOM_H*1.5-SEAT_H),
         data
       };
     }) : [];
@@ -915,8 +908,8 @@
         const orientation = raw.desk && raw.desk.orientation === 'vertical' ? 'vertical' : 'horizontal';
         const size = orientation === 'vertical' ? {w:DESK_H,h:DESK_W} : {w:DESK_W,h:DESK_H};
         return {
-          x: clamp(Number.isFinite(+(raw.desk && raw.desk.x)) ? +(raw.desk.x) : base.desk.x, 0, ROOM_W-size.w),
-          y: clamp(Number.isFinite(+(raw.desk && raw.desk.y)) ? +(raw.desk.y) : base.desk.y, 0, ROOM_H-size.h),
+          x: clamp(Number.isFinite(+(raw.desk && raw.desk.x)) ? +(raw.desk.x) : base.desk.x, -ROOM_W/2, ROOM_W*1.5-size.w),
+          y: clamp(Number.isFinite(+(raw.desk && raw.desk.y)) ? +(raw.desk.y) : base.desk.y, -ROOM_H/2, ROOM_H*1.5-size.h),
           orientation
         };
       })(),
@@ -974,8 +967,7 @@
     syncPlanLock();
     $('viewSwitch').textContent = isPupil ? 'Teacher View' : 'Pupil View';
     renderKey();
-    resolveLayoutCollisions();
-
+    // Rendering and using the key must never mutate saved desk coordinates.
     room.querySelectorAll('.seat').forEach(el => el.remove());
     const pupilPalette=[
       ['#ff5f68','#b93e49'],['#397ff0','#2459b8'],['#ffc532','#d49414'],
@@ -1052,11 +1044,18 @@
       const name=seat.querySelector('.seat-name');
       const fields=seat.querySelector('.seat-fields');
       if(!name) continue;
+      const pupilNameWrap=name.closest('.pupil-desk-name');
+      if(pupilNameWrap){
+        // Re-evaluate from the complete name on every resize or zoom.
+        const model=state.seats.find(s=>s.id===seat.dataset.id);
+        name.textContent=(model && String(model.data.Name||'').trim())||'';
+        pupilNameWrap.classList.remove('pupil-short-name');
+      }
       const bounds=seat.getBoundingClientRect();
       const seatWidth=bounds.width, seatHeight=bounds.height;
       if(!seatWidth || !seatHeight) continue;
       // Names scale down with the actual desk size, including pupil view.
-      const preferredNameSize=Math.min(14,Math.max(8,seatWidth/11.2));
+      const preferredNameSize=Math.min(14,Math.max(8,seatWidth/(pupilNameWrap?12.5:11.2)));
       const minimumNameSize=Math.min(10.667,Math.max(7.5,preferredNameSize*.80));
       name.classList.remove('name-wrap');
       let size=preferredNameSize;
@@ -1065,7 +1064,16 @@
         size=Math.max(minimumNameSize,size-.5);
         name.style.fontSize=size.toFixed(2)+'px';
       }
-      if(name.scrollWidth>name.clientWidth+1) name.classList.add('name-wrap');
+      if(name.scrollWidth>name.clientWidth+1){
+        if(pupilNameWrap){
+          // Prioritise the given name when the full name would wrap.
+          // The complete name remains on the desk's title/accessible label.
+          name.textContent=name.textContent.trim().split(/\s+/)[0]||'';
+          pupilNameWrap.classList.add('pupil-short-name');
+        }else{
+          name.classList.add('name-wrap');
+        }
+      }
       if(!fields) continue;
       const items=[...fields.children];
       const count=items.length;
