@@ -48,7 +48,7 @@
   .brand-compact{display:none}
   .topbar-controls{--control-gap:5px;--download-width:34px;--button-width:calc((100% - 3 * var(--control-gap)) / 4);width:min(550px,58vw);min-width:0;display:grid;grid-template-rows:30px 30px;gap:4px;align-self:center;justify-self:end}
   .topbar-row{width:100%;display:grid;align-items:stretch;gap:var(--control-gap)}
-  .topbar-row.primary-row{grid-template-columns:minmax(0,1fr) calc(var(--button-width) - var(--download-width) - var(--control-gap)) var(--download-width)}
+  .topbar-row.primary-row{grid-template-columns:minmax(0,1fr) 78px calc(var(--button-width) - var(--download-width) - var(--control-gap)) var(--download-width)}
   .topbar-row.secondary-row{grid-template-columns:repeat(4,minmax(0,1fr))}
   .plan-name{width:100%;min-width:0;height:30px;background:#fff;color:#101828;border:1px solid var(--line);border-radius:9px;padding:0 11px;box-shadow:0 1px 2px rgba(16,24,40,.04)}
   .topbar .btn{height:30px;min-width:0;padding:0 7px;font-size:12px;background:#f8fafc;color:#344054;border:1px solid var(--line);white-space:nowrap}
@@ -58,6 +58,10 @@
   .topbar .btn.danger{background:#fff;color:var(--danger);border-color:#f0b9b4}
   .topbar .btn.icon-only{display:grid;place-items:center;padding:0}
   .topbar .btn.icon-only svg{width:17px;height:17px;stroke:currentColor;stroke-width:2.4;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .topbar .btn.plan-lock-btn{display:flex;align-items:center;justify-content:center;gap:4px;padding:0 5px}
+  .plan-lock-btn svg{width:13px;height:13px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .topbar .btn.plan-lock-btn.is-locked{background:#eaf0ff;border-color:#9fb5ff;color:#163b9d}
+  .topbar .btn.plan-lock-btn.is-locked:hover{background:#dbe7ff}
   .workspace{display:grid;grid-template-columns:350px minmax(0,1fr);min-height:0;transition:grid-template-columns .3s ease}
   .workspace.settings-hidden{grid-template-columns:44px minmax(0,1fr)}
   .sidebar{grid-column:1;grid-row:1;background:var(--panel);border-right:1px solid var(--line);min-width:0;min-height:0;overflow:auto;padding:14px;opacity:1;transition:opacity .18s ease,padding .3s ease}
@@ -117,6 +121,10 @@
     user-select:none;
   }
   #room.dragging{cursor:grabbing}
+  /* In locked mode, the entire plan is a scroll/pan surface rather than an editor. */
+  #room.plan-locked{touch-action:auto;cursor:default}
+  #room.plan-locked > *{pointer-events:none}
+  #room.plan-locked .seat,#room.plan-locked .desk{touch-action:auto;cursor:default}
   #room.pupil-view{
     background:#f2cd91;
     border-color:#e2a33b;
@@ -385,7 +393,7 @@
     .topbar-controls{--download-width:32px;width:min(510px,68vw);grid-template-rows:29px 29px;gap:4px}
     .plan-name,.topbar .btn{height:29px}
     .topbar .btn{padding:0 6px;font-size:11px}
-    .topbar-row.primary-row{grid-template-columns:minmax(0,1fr) calc(var(--button-width) - var(--download-width) - var(--control-gap)) var(--download-width)}
+    .topbar-row.primary-row{grid-template-columns:minmax(0,1fr) 70px calc(var(--button-width) - var(--download-width) - var(--control-gap)) var(--download-width)}
     .workspace,.workspace.settings-hidden{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr)}
     .sidebar{grid-column:1;grid-row:1;border-right:0;border-bottom:1px solid var(--line);max-height:3000px;overflow:hidden;transition:max-height .3s ease,opacity .2s ease,padding .3s ease}
     .workspace.settings-hidden .sidebar{max-height:0;padding:0;visibility:hidden}
@@ -393,7 +401,7 @@
     .settings-rail-content{writing-mode:horizontal-tb;transform:none}
     .settings-rail-chevron{transform:rotate(90deg)}
     .main{grid-column:1;grid-row:2;padding:12px}
-    .room-shell{min-width:700px}
+    .room-shell{min-width:var(--room-tablet-min,560px)!important;max-width:100%!important}
   }
   @media(max-width:640px){
     .topbar{grid-template-columns:70px minmax(0,1fr);gap:6px;padding:4px 6px}
@@ -405,7 +413,15 @@
     .brand-compact-word .buddy-word{color:#2f80ed}
     .topbar-controls{--control-gap:3px;--download-width:24px;width:100%;min-width:0;grid-template-rows:27px 27px;gap:3px}
     .topbar-row{gap:var(--control-gap)}
-    .topbar-row.primary-row{grid-template-columns:minmax(0,1fr) calc(var(--button-width) - var(--download-width) - var(--control-gap)) var(--download-width)}
+    .topbar-row.primary-row{grid-template-columns:minmax(0,1fr) 62px calc(var(--button-width) - var(--download-width) - var(--control-gap)) var(--download-width)}
+    .room-shell{min-width:var(--room-mobile-min,300px)!important}
+    .main{padding:7px}
+    .room-title{font-size:14px}
+    .seat{border-width:1px;border-radius:5px}
+    .seat-name{padding:2px 2px 1px}
+    .seat-fields{padding:0 2px 1px}
+    .colour-band{height:5px;min-height:4px;flex-basis:5px}
+    #room.pupil-view .pupil-desk-apron,#room.pupil-view .pupil-desk-leg{border-width:2px}
     .topbar-row.secondary-row{grid-template-columns:repeat(4,minmax(0,1fr))}
     .plan-name,.topbar .btn{height:27px}
     .plan-name{padding:0 8px;font-size:12px}
@@ -442,6 +458,7 @@
     <div class="topbar-controls">
       <div class="topbar-row primary-row">
         <input id="planName" class="plan-name" value="Untitled seating plan" aria-label="Plan name">
+        <button class="btn plan-lock-btn" id="planLockBtn" type="button" aria-pressed="false" aria-label="Lock plan to scroll and pan" title="Lock plan to scroll and pan"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span id="planLockLabel">Lock</span></button>
         <button class="btn primary" id="saveBtn">Save</button>
         <button class="btn primary icon-only" id="downloadPlanBtn" aria-label="Download" title="Download saved plan"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 17v4h16v-4"/></svg></button>
       </div>
@@ -589,6 +606,26 @@
   let keyPreview = false;
   let drag = null;
   let draftTimer = null;
+  // View preference only: locking never changes the saved seating plan.
+  // Start locked on phones so touch-scrolling works immediately.
+  let planLocked = window.matchMedia('(max-width:640px)').matches;
+
+  function syncPlanLock(){
+    const btn=$('planLockBtn'), room=$('room');
+    room.classList.toggle('plan-locked',planLocked);
+    btn.classList.toggle('is-locked',planLocked);
+    btn.setAttribute('aria-pressed',String(planLocked));
+    $('planLockLabel').textContent=planLocked?'Locked':'Lock';
+    const action=planLocked?'Plan locked: tap to unlock and move desks':'Lock plan to scroll and pan without moving desks';
+    btn.setAttribute('aria-label',action);
+    btn.title=action;
+  }
+
+  function togglePlanLock(){
+    if(drag) endDrag();
+    planLocked=!planLocked;
+    syncPlanLock();
+  }
 
   function updateDocumentTitle(){
     const planTitle = (state.title || '').trim();
@@ -822,12 +859,15 @@
     if(shell){
       shell.style.minWidth=Math.max(760,state.desksPerRow*150)+'px';
       shell.style.maxWidth=Math.max(1220,state.desksPerRow*195)+'px';
+      shell.style.setProperty('--room-tablet-min',Math.max(520,state.desksPerRow*84)+'px');
+      shell.style.setProperty('--room-mobile-min',Math.max(300,state.desksPerRow*54)+'px');
     }
     room.style.aspectRatio=ROOM_W+' / '+ROOM_H;
     room.style.backgroundSize='calc(100% / '+(ROOM_W/state.gridSize)+') calc(100% / '+(ROOM_H/state.gridSize)+')';
     const isPupil = state.viewMode === 'pupil';
 
     room.classList.toggle('pupil-view',isPupil);
+    syncPlanLock();
     $('viewSwitch').textContent = isPupil ? 'Teacher View' : 'Pupil View';
     renderKey();
     resolveLayoutCollisions();
@@ -900,10 +940,12 @@
       if(!name) continue;
       // Shrink a single-line name to 8pt before trying a two-line wrap.
       name.classList.remove('name-wrap');
-      let size=14;
+      const compact=window.matchMedia('(max-width:640px)').matches;
+      const minimum=compact?9:10.667;
+      let size=compact?11:14;
       name.style.fontSize=size+'px';
-      while(size>10.667 && name.scrollWidth>name.clientWidth+1){
-        size=Math.max(10.667,size-.5);
+      while(size>minimum && name.scrollWidth>name.clientWidth+1){
+        size=Math.max(minimum,size-.5);
         name.style.fontSize=size+'px';
       }
       if(name.scrollWidth>name.clientWidth+1) name.classList.add('name-wrap');
@@ -929,7 +971,7 @@
         let usedSlots=0;
         for(const field of items){
           field.classList.remove('field-wide');
-          field.style.fontSize='11px';
+          field.style.fontSize=(compact?'9.5':'11')+'px';
           const width=fullTextWidth(field);
           // A long value (e.g. Attendance: 93.90%) uses the whole
           // row; short fields share two columns on surrounding rows.
@@ -945,13 +987,14 @@
         items.forEach(field=>field.classList.remove('field-wide'));
       }
       const available=fields.clientHeight;
-      const fieldSize=Math.min(11,Math.max(8.5,(available-2)/rows/1.06));
+      const fieldMin=compact?7.5:8.5;
+      const fieldSize=Math.min(compact?9.5:11,Math.max(fieldMin,(available-2)/rows/1.06));
       for(const field of items){
         let font=fieldSize;
         field.style.fontSize=font+'px';
         // Preserve the whole value wherever a little font adjustment helps.
-        while(font>8.5 && fullTextWidth(field)>field.clientWidth-1){
-          font=Math.max(8.5,font-.5);
+        while(font>fieldMin && fullTextWidth(field)>field.clientWidth-1){
+          font=Math.max(fieldMin,font-.5);
           field.style.fontSize=font+'px';
         }
       }
@@ -1826,6 +1869,7 @@
   // Events
   document.querySelectorAll('.tab').forEach(t => t.addEventListener('click',()=>switchTab(t.dataset.tab)));
   $('planName').addEventListener('input',e=>{state.title=e.target.value;$('roomTitle').textContent=state.title||'Untitled seating plan';updateDocumentTitle();queueDraft();});
+  $('planLockBtn').addEventListener('click',togglePlanLock);
   $('saveBtn').addEventListener('click',saveCurrent);
   $('newBtn').addEventListener('click',newPlan);
   $('addSeatTopBtn').addEventListener('click',()=>addSeat());
@@ -1941,6 +1985,7 @@
     keyLastPointerType=e.pointerType||'mouse';
   });
   $('keyBox').addEventListener('click',e=>{
+    if(planLocked) return;
     const toggle=e.target.closest('[data-key-toggle]');
     if(toggle){
       e.stopPropagation();
@@ -1966,24 +2011,27 @@
   });
 
   document.addEventListener('click',e=>{
+    if(planLocked && e.target.closest('#room')) return;
     if(!activeRuleIds.size) return;
     if(e.target.closest('.key-item,.seat,.desk,button,input,select,textarea,label,a,.tab,.dropzone')) return;
     clearRuleHighlights();
   });
 
   $('room').addEventListener('pointerdown',e=>{
+    if(planLocked) return;
     if(e.target.closest('.teacher-rotate,.teacher-pen-pot')) return;
     const seat=e.target.closest('.seat'); if(seat){startDrag(e,'seat',seat.dataset.id);return;}
     const desk=e.target.closest('.desk'); if(desk){startDrag(e,'desk');}
   });
   $('room').addEventListener('click',e=>{
+    if(planLocked) return;
     const rotate=e.target.closest('.teacher-rotate,.teacher-pen-pot');
     if(rotate){e.stopPropagation();rotateTeacherDesk();}
   });
   window.addEventListener('pointermove',moveDrag);
   window.addEventListener('pointerup',endDrag);
   window.addEventListener('pointercancel',endDrag);
-  $('room').addEventListener('dblclick',e=>{const seat=e.target.closest('.seat');if(seat)showSeatInTable(seat.dataset.id);});
+  $('room').addEventListener('dblclick',e=>{if(planLocked)return;const seat=e.target.closest('.seat');if(seat)showSeatInTable(seat.dataset.id);});
 
   const drop=$('dropzone');
   drop.addEventListener('click',()=>$('csvInput').click());
