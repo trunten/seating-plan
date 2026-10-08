@@ -833,27 +833,43 @@
     key.style.width='auto';
     const widths=[...key.querySelectorAll('.key-header,.key-item')].map(el=>el.scrollWidth);
     const contentWidth=Math.max(48,...widths);
-    key.style.width=Math.ceil(contentWidth + 16)+'px';
+    key.style.width=Math.ceil(contentWidth + 10)+'px';
+  }
+
+  function renderPrintKey(active){
+    const el=$('printKey');
+    if(!el) return;
+    el.innerHTML=active.map(r=>`<span class="print-key-item"><span class="print-key-swatch" style="background:${escHtml(r.color)}"></span><span>${escHtml(ruleLabel(r))}</span></span>`).join('');
   }
 
   function renderKey(){
     const key=$('keyBox');
-    const active = state.rules.filter(r => r.enabled);
-    const validIds = new Set(active.map(r => r.id));
-    activeRuleIds = new Set([...activeRuleIds].filter(id => validIds.has(id)));
+    const active=state.rules.filter(r=>r.enabled);
+    const validIds=new Set(active.map(r=>r.id));
+    activeRuleIds=new Set([...activeRuleIds].filter(id=>validIds.has(id)));
+    renderPrintKey(active);
     key.classList.toggle('collapsed',state.keyCollapsed);
+    key.classList.toggle('preview',state.keyCollapsed && keyPreview);
+    key.style.setProperty('--preview-height',(36+active.length*31)+'px');
 
     if(state.keyCollapsed){
-      key.innerHTML = `<div class="key-header"><button class="key-toggle" data-key-toggle title="Expand key" aria-label="Expand key">+</button></div>` +
-        active.map(r => `<div class="key-item ${activeRuleIds.has(r.id)?'active':''}" data-key-rule="${escHtml(r.id)}" title="${escHtml(ruleLabel(r))}"><span class="swatch" style="background:${escHtml(r.color)}"></span><span class="key-label">${escHtml(ruleLabel(r))}</span></div>`).join('');
+      key.innerHTML=`<div class="key-header"><button class="key-toggle" data-key-toggle title="${keyPreview?'Expand key fully':'Preview key'}" aria-label="${keyPreview?'Expand key fully':'Preview key'}" aria-expanded="${keyPreview?'true':'false'}">+</button></div>`+
+        active.map(r=>`<div class="key-item ${activeRuleIds.has(r.id)?'active':''}" data-key-rule="${escHtml(r.id)}" title="${escHtml(ruleLabel(r))}" aria-hidden="${!keyPreview}"><span class="swatch" style="background:${escHtml(r.color)}"></span><span class="key-label">${escHtml(ruleLabel(r))}</span></div>`).join('');
       key.style.width='36px';
       return;
     }
-
-    key.innerHTML = `<div class="key-header"><div class="key-title">Key</div><button class="key-toggle" data-key-toggle title="Collapse key" aria-label="Collapse key">−</button></div>` + (active.length
-      ? `<div class="key-help">Click colours to highlight. Multiple selections show the intersection.</div>` + active.map(r => `<div class="key-item ${activeRuleIds.has(r.id)?'active':''}" data-key-rule="${escHtml(r.id)}" title="Click to ${activeRuleIds.has(r.id)?'remove':'add'} this highlight"><span class="swatch" style="background:${escHtml(r.color)}"></span><span class="key-label">${escHtml(ruleLabel(r))}</span></div>`).join('')
-      : '<div class="empty-key">No colour rules</div>');
+    key.innerHTML=`<div class="key-header"><button class="key-toggle" data-key-toggle title="Collapse key" aria-label="Collapse key" aria-expanded="true">−</button><div class="key-title">Key</div></div>`+
+      (active.length
+        ? `<div class="key-help">Click colours to highlight. Multiple selections show the intersection.</div>`+
+          active.map(r=>`<div class="key-item ${activeRuleIds.has(r.id)?'active':''}" data-key-rule="${escHtml(r.id)}" title="Click to ${activeRuleIds.has(r.id)?'remove':'add'} this highlight"><span class="swatch" style="background:${escHtml(r.color)}"></span><span class="key-label">${escHtml(ruleLabel(r))}</span></div>`).join('')
+        : '<div class="empty-key">No colour rules</div>');
     sizeExpandedKeyToContent();
+  }
+
+  function setKeyPreview(show){
+    if(!state.keyCollapsed || keyPreview===show) return;
+    keyPreview=show;
+    renderKey(); // Do not run collision resolution on hover/tap previews.
   }
 
   function switchView(){
@@ -870,7 +886,8 @@
 
   function toggleKeyCollapsed(){
     state.keyCollapsed=!state.keyCollapsed;
-    renderRoom();
+    keyPreview=false;
+    renderKey(); // Key expansion is an overlay, not a layout operation.
     queueDraft();
   }
 
@@ -1715,13 +1732,39 @@
     const del=e.target.closest('[data-delete-plan]'); if(del){deleteStored(del.dataset.deletePlan);}
   });
 
+  let keyLastPointerType='mouse';
+  $('keyBox').addEventListener('pointerenter',e=>{
+    if(e.pointerType!=='touch' && state.keyCollapsed) setKeyPreview(true);
+  });
+  $('keyBox').addEventListener('pointerleave',e=>{
+    if(e.pointerType!=='touch' && state.keyCollapsed) setKeyPreview(false);
+  });
+  $('keyBox').addEventListener('pointerdown',e=>{
+    keyLastPointerType=e.pointerType||'mouse';
+  });
   $('keyBox').addEventListener('click',e=>{
     const toggle=e.target.closest('[data-key-toggle]');
-    if(toggle){ e.stopPropagation(); toggleKeyCollapsed(); return; }
+    if(toggle){
+      e.stopPropagation();
+      // Touch: first tap previews the swatches, second tap opens the full key.
+      // Mouse and keyboard: click expands directly; mouse hover previews.
+      if(state.keyCollapsed && (e.pointerType==='touch'||keyLastPointerType==='touch') && !keyPreview){
+        setKeyPreview(true);
+      }else{
+        toggleKeyCollapsed();
+      }
+      keyLastPointerType='mouse';
+      return;
+    }
     const item=e.target.closest('[data-key-rule]');
     if(!item)return;
     e.stopPropagation();
     toggleRuleHighlight(item.dataset.keyRule);
+  });
+  document.addEventListener('pointerdown',e=>{
+    if(e.pointerType==='touch' && state.keyCollapsed && keyPreview && !$('keyBox').contains(e.target)){
+      setKeyPreview(false);
+    }
   });
 
   document.addEventListener('click',e=>{
