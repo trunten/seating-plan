@@ -1782,8 +1782,9 @@
     setRoomDimensions(cols,rows);
     // Scale the layout with the room, preserving relative positions.
     state.seats.forEach(seat=>{
-      seat.x=snapInside('seat',seat.x/oldW*ROOM_W,seat.y/oldH*ROOM_H).x;
-      seat.y=snapInside('seat',seat.y/oldH*ROOM_H).y;
+      const position=snapInside('seat',seat.x/oldW*ROOM_W,seat.y/oldH*ROOM_H);
+      seat.x=position.x;
+      seat.y=position.y;
     });
     const pos=snapInside('desk',state.desk.x/oldW*ROOM_W,state.desk.y/oldH*ROOM_H);
     state.desk.x=pos.x;state.desk.y=pos.y;
