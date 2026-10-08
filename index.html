@@ -1300,6 +1300,7 @@
       const s=state.seats.find(s=>s.id===drag.id); if(!s)return; s.x=nx;s.y=ny;
       const el=document.querySelector(`.seat[data-id="${CSS.escape(s.id)}"]`); if(el){el.style.left=(nx/ROOM_W*100)+'%';el.style.top=(ny/ROOM_H*100)+'%';}
     }
+    if(state.viewMode==='pupil') updatePupilDecorVisibility();
     queueDraft();
   }
 
