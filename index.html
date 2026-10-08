@@ -84,53 +84,119 @@
   }
   #room.dragging{cursor:grabbing}
   #room.pupil-view{
-    background-color:#fffaf0;
+    background-color:#f5d39a;
     background-image:
-      radial-gradient(circle at 12% 14%,rgba(255,213,79,.14) 0 34px,transparent 35px),
-      radial-gradient(circle at 88% 18%,rgba(102,187,106,.10) 0 42px,transparent 43px),
-      linear-gradient(180deg,#fffdf7 0%,#fff8e7 100%);
-    border-color:#f0b84b;
+      linear-gradient(118deg,
+        rgba(255,255,255,.42) 0 8%,
+        rgba(255,255,255,.10) 8% 14%,
+        transparent 14% 25%,
+        rgba(255,247,218,.38) 25% 33%,
+        transparent 33% 100%),
+      repeating-linear-gradient(90deg,rgba(131,79,33,.07) 0 2px,transparent 2px 150px),
+      repeating-linear-gradient(0deg,rgba(131,79,33,.045) 0 1px,transparent 1px 88px),
+      linear-gradient(180deg,#ffe9bd 0%,#f3cb8a 55%,#edbd78 100%);
+    border-color:#e7aa3f;
+    box-shadow:0 12px 30px rgba(120,76,25,.16),inset 0 0 0 1px rgba(255,255,255,.55);
+  }
+  #room.pupil-view::before{
+    content:'';
+    position:absolute;inset:0;z-index:0;pointer-events:none;
+    background:
+      linear-gradient(120deg,rgba(255,255,255,.34) 0 8%,transparent 8% 17%,rgba(255,255,255,.20) 17% 23%,transparent 23% 100%),
+      radial-gradient(ellipse at 10% 12%,rgba(255,238,158,.34),transparent 31%);
+    mix-blend-mode:screen;
+  }
+  #room.pupil-view::after{
+    content:'';
+    position:absolute;left:0;right:0;top:0;height:4.8%;z-index:0;pointer-events:none;
+    background:linear-gradient(180deg,#f0c57b 0%,#d99a4d 74%,#bf7834 75%,#bf7834 100%);
+    box-shadow:0 4px 8px rgba(105,61,26,.13);
   }
   #room.pupil-view .key{display:none}
-  .pupil-decor{display:none;position:absolute;z-index:0;pointer-events:none;user-select:none;filter:drop-shadow(0 5px 4px rgba(16,24,40,.12))}
+
+  .pupil-decor{display:none;position:absolute;z-index:1;pointer-events:none;user-select:none}
   #room.pupil-view .pupil-decor{display:block}
-  .plant{font-size:44px;line-height:1}
-  .plant-a{left:1.3%;bottom:1.5%;transform:rotate(-5deg)}
-  .plant-b{right:1.4%;top:1.8%;transform:rotate(5deg) scale(.92)}
-  .plant-c{right:1.2%;bottom:1.5%;transform:rotate(4deg) scale(1.05)}
+  .cartoon-plant{width:72px;height:94px;filter:drop-shadow(0 5px 3px rgba(89,55,20,.16))}
+  .plant-a{left:-8px;bottom:-5px;transform:rotate(-5deg) scale(1.04)}
+  .plant-b{right:-5px;top:28px;transform:rotate(5deg) scale(.90)}
+  .plant-c{right:-8px;bottom:-6px;transform:rotate(5deg) scale(1.08)}
+  .cartoon-pot{
+    position:absolute;left:16px;bottom:0;width:42px;height:34px;
+    background:var(--pot,#ff785f);border:3px solid #334155;border-radius:8px 8px 17px 17px;
+    box-shadow:inset 0 6px rgba(255,255,255,.20);
+  }
+  .cartoon-pot::before{
+    content:'• ᴗ •';position:absolute;left:0;right:0;top:7px;text-align:center;
+    color:#29384f;font-size:10px;font-weight:900;letter-spacing:1px;
+  }
+  .leaf{
+    position:absolute;left:28px;top:14px;width:23px;height:48px;
+    background:#56bf55;border:3px solid #2f6d3d;border-radius:90% 10% 90% 10%;
+    transform-origin:50% 90%;
+    box-shadow:inset 5px 4px rgba(255,255,255,.15);
+  }
+  .leaf.l1{transform:rotate(-43deg) translate(-4px,5px);background:#67ca55}
+  .leaf.l2{transform:rotate(-19deg) translate(-1px,-3px);background:#48b84e}
+  .leaf.l3{transform:rotate(4deg) translate(0,-9px);background:#72d15d}
+  .leaf.l4{transform:rotate(29deg) translate(2px,-2px);background:#3eaa49}
+  .leaf.l5{transform:rotate(50deg) translate(6px,7px);background:#62c65b}
+
   #room.pupil-view .seat{
     overflow:visible;
-    background:linear-gradient(180deg,#ffd98a 0%,#f5bd63 100%);
-    border:2px solid #334155;
-    border-radius:10px 10px 14px 14px;
-    box-shadow:0 7px 0 #b87938,0 10px 14px rgba(91,55,20,.16);
+    background:var(--desk-color,#ff6f61);
+    border:3px solid #33261f;
+    border-radius:11px 11px 14px 14px;
+    box-shadow:0 7px 0 var(--desk-dark,#b94c43),0 11px 15px rgba(91,55,20,.17);
+    z-index:3;
+  }
+  #room.pupil-view .seat::before{
+    content:'';
+    position:absolute;left:-5px;right:-5px;top:-4px;height:66%;
+    background:linear-gradient(180deg,#fffaf0 0%,#f9e7c9 100%);
+    border:3px solid #33261f;border-radius:11px;
+    box-shadow:inset 0 -4px rgba(211,171,111,.18);
     z-index:2;
+  }
+  #room.pupil-view .seat::after{
+    content:'';
+    position:absolute;left:9%;right:9%;bottom:-9px;height:10px;
+    background:var(--desk-dark,#b94c43);border:2px solid #33261f;border-top:0;border-radius:0 0 8px 8px;
+    z-index:-1;
   }
   #room.pupil-view .seat.selected{outline:none}
   #room.pupil-view .seat-fields,#room.pupil-view .colour-band{display:none}
   #room.pupil-view .seat-name{
-    position:relative;z-index:3;
-    height:100%;padding:0 8px;
+    position:relative;z-index:4;height:66%;padding:0 8px;
     display:flex;align-items:center;justify-content:center;
-    color:#213047;font-size:clamp(11px,1.3vw,16px);
-    text-shadow:0 1px 0 rgba(255,255,255,.55);
+    color:#192a43;font-size:clamp(11px,1.28vw,16px);font-weight:900;
+    text-shadow:0 1px 0 rgba(255,255,255,.75);
   }
   .pupil-chair{display:none}
   #room.pupil-view .pupil-chair{
-    display:flex;position:absolute;left:24%;top:-28%;width:52%;height:42%;
+    display:flex;position:absolute;left:26%;top:-31%;width:48%;height:43%;
     align-items:center;justify-content:center;
-    background:var(--chair-color,#6ab7ff);border:2px solid #334155;border-bottom:0;
-    border-radius:16px 16px 7px 7px;
-    color:#26384f;font-size:13px;font-weight:900;letter-spacing:1px;
-    box-shadow:inset 0 -5px rgba(255,255,255,.18);
+    background:var(--desk-color,#ff6f61);border:3px solid #33261f;border-bottom:0;
+    border-radius:17px 17px 6px 6px;
+    color:#253650;font-size:12px;font-weight:900;letter-spacing:.8px;
+    box-shadow:inset 0 -5px rgba(255,255,255,.17);
     z-index:1;
   }
-  #room.pupil-view .desk{
-    background:linear-gradient(180deg,#dba66c 0%,#b97843 100%);
-    border-color:#684326;
-    color:#2d2118;
-    box-shadow:0 7px 0 #745038,0 11px 15px rgba(91,55,20,.18);
+  #room.pupil-view .pupil-chair::before,
+  #room.pupil-view .pupil-chair::after{
+    content:'';position:absolute;top:38%;width:10px;height:3px;border-radius:3px;background:var(--desk-color,#ff6f61);
+    box-shadow:0 0 0 1px rgba(51,38,31,.10);
   }
+  #room.pupil-view .pupil-chair::before{left:-15px;transform:rotate(55deg)}
+  #room.pupil-view .pupil-chair::after{right:-15px;transform:rotate(-55deg)}
+
+  #room.pupil-view .desk{
+    background:linear-gradient(180deg,#dca56d 0%,#bd7a45 100%);
+    border-color:#5d3a23;color:#2d2118;
+    box-shadow:0 7px 0 #745038,0 12px 16px rgba(91,55,20,.20);
+    z-index:3;
+  }
+  #room.pupil-view .desk::before{display:none}
+  #room.pupil-view .teacher-rotate{display:none}
   .seat,.desk{position:absolute;transform:translate(0,0);touch-action:none}
   .seat{
     width:14.1667%;
@@ -153,21 +219,30 @@
   .colour-band{margin-top:auto;height:9px;display:flex;width:100%;background:#f2f4f7}
   .colour-segment{height:100%;flex:1}
   .desk{
-    width:18.3333%;
-    height:8.3333%;
     background:#26384f;
     border:2px solid #122033;
     color:#fff;
     border-radius:10px;
     box-shadow:0 4px 12px rgba(16,24,40,.18);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:clamp(11px,1vw,14px);
-    font-weight:800;
-    cursor:grab;
-    letter-spacing:.2px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:clamp(11px,1vw,14px);font-weight:800;
+    cursor:grab;letter-spacing:.2px;overflow:visible;
   }
+  .desk::before{
+    content:'';position:absolute;background:#79a7e8;border-radius:4px;opacity:.9;pointer-events:none;
+  }
+  .desk[data-facing="up"]::before{left:12%;right:12%;top:-4px;height:5px}
+  .desk[data-facing="down"]::before{left:12%;right:12%;bottom:-4px;height:5px}
+  .desk[data-facing="left"]::before{top:12%;bottom:12%;left:-4px;width:5px}
+  .desk[data-facing="right"]::before{top:12%;bottom:12%;right:-4px;width:5px}
+  .teacher-desk-label{pointer-events:none}
+  .teacher-rotate{
+    position:absolute;right:-9px;top:-9px;width:26px;height:26px;padding:0;
+    border:1px solid #9fb5d8;border-radius:50%;background:#fff;color:#2457d6;
+    display:grid;place-items:center;font-size:16px;font-weight:900;line-height:1;
+    box-shadow:0 2px 6px rgba(16,24,40,.18);cursor:pointer;z-index:4;
+  }
+  .teacher-rotate:hover{background:#eef3ff}
   .key{
     position:absolute;left:1.2%;top:1.4%;z-index:5;
     width:max-content;min-width:0;max-width:none;
@@ -391,9 +466,9 @@
           <a class="view-switch" id="viewSwitch" href="#">Pupil View</a>
         </div>
         <div id="room" aria-label="Seating plan room">
-          <div class="pupil-decor plant plant-a" aria-hidden="true">🪴</div>
-          <div class="pupil-decor plant plant-b" aria-hidden="true">🪴</div>
-          <div class="pupil-decor plant plant-c" aria-hidden="true">🪴</div>
+          <div class="pupil-decor cartoon-plant plant-a" aria-hidden="true" style="--pot:#4c90ff"><span class="leaf l1"></span><span class="leaf l2"></span><span class="leaf l3"></span><span class="leaf l4"></span><span class="leaf l5"></span><span class="cartoon-pot"></span></div>
+          <div class="pupil-decor cartoon-plant plant-b" aria-hidden="true" style="--pot:#ff6f86"><span class="leaf l1"></span><span class="leaf l2"></span><span class="leaf l3"></span><span class="leaf l4"></span><span class="leaf l5"></span><span class="cartoon-pot"></span></div>
+          <div class="pupil-decor cartoon-plant plant-c" aria-hidden="true" style="--pot:#ff8c4f"><span class="leaf l1"></span><span class="leaf l2"></span><span class="leaf l3"></span><span class="leaf l4"></span><span class="leaf l5"></span><span class="cartoon-pot"></span></div>
           <div class="key" id="keyBox"></div>
           <div class="desk" id="teacherDesk">Teacher desk</div>
         </div>
@@ -442,7 +517,7 @@
       viewMode: 'teacher',
       keyCollapsed: false,
       seats: [],
-      desk: { x: snap((ROOM_W - DESK_W)/2, 20), y: snap(ROOM_H - DESK_H - 20, 20) },
+      desk: { x: snap((ROOM_W - DESK_W)/2, 20), y: snap(ROOM_H - DESK_H - 20, 20), orientation:'horizontal' },
       rules: []
     };
   }
@@ -455,7 +530,19 @@
   const COLLISION_GAP = 8;
   const KEY_GAP = 10;
 
-  function itemSize(type){ return type === 'desk' ? {w:DESK_W,h:DESK_H} : {w:SEAT_W,h:SEAT_H}; }
+  function teacherDeskSize(orientation = state.desk.orientation){
+    return orientation === 'vertical' ? {w:DESK_H,h:DESK_W} : {w:DESK_W,h:DESK_H};
+  }
+  function itemSize(type){ return type === 'desk' ? teacherDeskSize() : {w:SEAT_W,h:SEAT_H}; }
+  function teacherDeskFacing(){
+    const {w,h}=teacherDeskSize();
+    if(state.desk.orientation === 'vertical'){
+      const left=state.desk.x, right=ROOM_W-(state.desk.x+w);
+      return left <= right ? 'right' : 'left';
+    }
+    const top=state.desk.y, bottom=ROOM_H-(state.desk.y+h);
+    return top <= bottom ? 'down' : 'up';
+  }
   function gridMax(type){
     const {w,h}=itemSize(type), step=state.gridSize;
     return {x:Math.floor((ROOM_W-w)/step)*step,y:Math.floor((ROOM_H-h)/step)*step};
@@ -494,7 +581,8 @@
       if(s.id===id) continue;
       if(rectsOverlap(rect,{x:s.x,y:s.y,w:SEAT_W,h:SEAT_H},COLLISION_GAP)) return false;
     }
-    if(rectsOverlap(rect,{x:state.desk.x,y:state.desk.y,w:DESK_W,h:DESK_H},COLLISION_GAP)) return false;
+    const td=teacherDeskSize();
+    if(rectsOverlap(rect,{x:state.desk.x,y:state.desk.y,w:td.w,h:td.h},COLLISION_GAP)) return false;
     return true;
   }
   function nearestAvailablePosition(type,id,targetX,targetY){
@@ -517,7 +605,8 @@
     if(teacher.x!==state.desk.x || teacher.y!==state.desk.y){ state.desk=teacher; changed=true; }
     // If the teacher desk itself is under the key, move it to the nearest valid space first.
     const key=keyObstacle();
-    if(key && rectsOverlap({x:state.desk.x,y:state.desk.y,w:DESK_W,h:DESK_H},key,KEY_GAP)){
+    const td=teacherDeskSize();
+    if(key && rectsOverlap({x:state.desk.x,y:state.desk.y,w:td.w,h:td.h},key,KEY_GAP)){
       const p=nearestAvailablePosition('desk',null,state.desk.x,state.desk.y);
       if(p){ state.desk=p; changed=true; }
     }
@@ -582,10 +671,15 @@
       viewMode: raw.viewMode === 'pupil' ? 'pupil' : 'teacher',
       keyCollapsed: raw.keyCollapsed === true,
       seats,
-      desk: {
-        x: clamp(Number.isFinite(+(raw.desk && raw.desk.x)) ? +(raw.desk.x) : base.desk.x, 0, ROOM_W-DESK_W),
-        y: clamp(Number.isFinite(+(raw.desk && raw.desk.y)) ? +(raw.desk.y) : base.desk.y, 0, ROOM_H-DESK_H)
-      },
+      desk: (() => {
+        const orientation = raw.desk && raw.desk.orientation === 'vertical' ? 'vertical' : 'horizontal';
+        const size = orientation === 'vertical' ? {w:DESK_H,h:DESK_W} : {w:DESK_W,h:DESK_H};
+        return {
+          x: clamp(Number.isFinite(+(raw.desk && raw.desk.x)) ? +(raw.desk.x) : base.desk.x, 0, ROOM_W-size.w),
+          y: clamp(Number.isFinite(+(raw.desk && raw.desk.y)) ? +(raw.desk.y) : base.desk.y, 0, ROOM_H-size.h),
+          orientation
+        };
+      })(),
       rules: Array.isArray(raw.rules) ? raw.rules.map(r => ({
         id: r.id || uid(),
         field: unique.includes(r.field) ? r.field : 'Name',
@@ -631,7 +725,11 @@
     resolveLayoutCollisions();
 
     room.querySelectorAll('.seat').forEach(el => el.remove());
-    const chairColours=['#69b7ff','#6fd08c','#ff7c73','#b58cff','#ffd15c','#ff9c54'];
+    const pupilPalette=[
+      ['#ff5f68','#b93e49'],['#397ff0','#2459b8'],['#ffc532','#d49414'],
+      ['#4fbd68','#2f8845'],['#8c5be8','#6536b5'],['#20b9cf','#168395'],
+      ['#ff8848','#c75e27'],['#ed62a7','#b73d79']
+    ];
 
     state.seats.forEach((seat,index)=>{
       const el = document.createElement('div');
@@ -642,7 +740,9 @@
       el.dataset.id = seat.id;
       el.style.left = (seat.x / ROOM_W * 100) + '%';
       el.style.top = (seat.y / ROOM_H * 100) + '%';
-      el.style.setProperty('--chair-color',chairColours[index % chairColours.length]);
+      const colours=pupilPalette[index % pupilPalette.length];
+      el.style.setProperty('--desk-color',colours[0]);
+      el.style.setProperty('--desk-dark',colours[1]);
 
       const name = String(seat.data.Name || '').trim();
       if(isPupil){
@@ -662,9 +762,16 @@
     });
 
     const desk = $('teacherDesk');
-    desk.textContent = isPupil ? 'Teacher' : 'Teacher desk';
+    const deskSize=teacherDeskSize();
+    desk.dataset.orientation=state.desk.orientation;
+    desk.dataset.facing=teacherDeskFacing();
+    desk.style.width=(deskSize.w/ROOM_W*100)+'%';
+    desk.style.height=(deskSize.h/ROOM_H*100)+'%';
     desk.style.left = (state.desk.x / ROOM_W * 100) + '%';
     desk.style.top = (state.desk.y / ROOM_H * 100) + '%';
+    desk.innerHTML = isPupil
+      ? '<span class="teacher-desk-label">Teacher</span>'
+      : '<span class="teacher-desk-label">Teacher desk</span><button class="teacher-rotate" type="button" title="Rotate teacher desk 90°" aria-label="Rotate teacher desk 90 degrees">↻</button>';
   }
 
   function sizeExpandedKeyToContent(){
@@ -1086,9 +1193,31 @@
   }
 
   function resetDesk(){
-    const desired=snapInside('desk',(ROOM_W-DESK_W)/2,ROOM_H-DESK_H-20);
+    const size=teacherDeskSize();
+    const desired=snapInside('desk',(ROOM_W-size.w)/2,ROOM_H-size.h-20);
     const pos=nearestAvailablePosition('desk',null,desired.x,desired.y) || desired;
-    state.desk=pos; renderRoom(); queueDraft();
+    state.desk={...state.desk,...pos}; renderRoom(); queueDraft();
+  }
+
+  function rotateTeacherDesk(){
+    if(state.viewMode!=='teacher') return;
+    const oldOrientation=state.desk.orientation || 'horizontal';
+    const oldSize=teacherDeskSize(oldOrientation);
+    const newOrientation=oldOrientation==='horizontal'?'vertical':'horizontal';
+    const newSize=teacherDeskSize(newOrientation);
+    const centreX=state.desk.x+oldSize.w/2, centreY=state.desk.y+oldSize.h/2;
+    const oldDesk={...state.desk};
+    state.desk.orientation=newOrientation;
+    const desired=snapInside('desk',centreX-newSize.w/2,centreY-newSize.h/2);
+    const pos=nearestAvailablePosition('desk',null,desired.x,desired.y);
+    if(!pos){
+      state.desk=oldDesk;
+      toast('No free space to rotate the teacher desk here');
+      renderRoom();
+      return;
+    }
+    state.desk.x=pos.x; state.desk.y=pos.y;
+    renderRoom(); queueDraft();
   }
 
   function newPlan(){
@@ -1206,7 +1335,7 @@
     state.title=$('planName').value.trim()||state.title;
     const dataRows=[state.columns, ...state.seats.map(s=>state.columns.map(c=>s.data[c]??''))];
     const layoutRows=[
-      ['Plan name',state.title],['Teacher desk X',state.desk.x],['Teacher desk Y',state.desk.y],['Grid size',state.gridSize],[],
+      ['Plan name',state.title],['Teacher desk X',state.desk.x],['Teacher desk Y',state.desk.y],['Teacher desk orientation',state.desk.orientation],['Grid size',state.gridSize],[],
       ['Desk #','X','Y',...state.columns],
       ...state.seats.map((s,i)=>[i+1,s.x,s.y,...state.columns.map(c=>s.data[c]??'')])
     ];
@@ -1338,8 +1467,13 @@
   });
 
   $('room').addEventListener('pointerdown',e=>{
+    if(e.target.closest('.teacher-rotate')) return;
     const seat=e.target.closest('.seat'); if(seat){startDrag(e,'seat',seat.dataset.id);return;}
     const desk=e.target.closest('.desk'); if(desk){startDrag(e,'desk');}
+  });
+  $('room').addEventListener('click',e=>{
+    const rotate=e.target.closest('.teacher-rotate');
+    if(rotate){e.stopPropagation();rotateTeacherDesk();}
   });
   window.addEventListener('pointermove',moveDrag);
   window.addEventListener('pointerup',endDrag);
