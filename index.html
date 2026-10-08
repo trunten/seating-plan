@@ -224,9 +224,12 @@
   .teacher-pen-pot{display:none}
   #room.pupil-view .teacher-pen-pot{
     display:block;position:absolute;right:9px;top:8px;width:20px;height:22px;
+    padding:0;cursor:pointer;z-index:5;
     background:#fff;border:2px solid #5d3a23;border-radius:4px 4px 7px 7px;
     box-shadow:inset 0 -4px rgba(89,58,35,.08);
   }
+  #room.pupil-view .teacher-pen-pot:hover{background:#eef3ff;box-shadow:0 0 0 3px rgba(36,87,214,.15)}
+  #room.pupil-view .teacher-pen-pot:focus-visible{outline:3px solid #2457d6;outline-offset:3px}
   #room.pupil-view .teacher-pen-pot::before,
   #room.pupil-view .teacher-pen-pot::after{
     content:'';position:absolute;bottom:15px;width:4px;height:18px;border-radius:3px 3px 0 0;
@@ -862,7 +865,7 @@
     desk.style.left = (state.desk.x / ROOM_W * 100) + '%';
     desk.style.top = (state.desk.y / ROOM_H * 100) + '%';
     desk.innerHTML = isPupil
-      ? '<span class="teacher-desk-label">Teacher</span><span class="teacher-pen-pot" aria-hidden="true"></span>'
+      ? '<span class="teacher-desk-label">Teacher</span><button class="teacher-pen-pot" type="button" title="Rotate teacher desk 90°" aria-label="Rotate teacher desk 90 degrees"></button>'
       : '<span class="teacher-desk-label">Teacher desk</span><button class="teacher-rotate" type="button" title="Rotate teacher desk 90°" aria-label="Rotate teacher desk 90 degrees">↻</button>';
     updatePupilDecorVisibility();
     requestAnimationFrame(fitAllSeatContents);
@@ -1402,7 +1405,6 @@
   }
 
   function rotateTeacherDesk(){
-    if(state.viewMode!=='teacher') return;
     const oldOrientation=state.desk.orientation || 'horizontal';
     const oldSize=teacherDeskSize(oldOrientation);
     const newOrientation=oldOrientation==='horizontal'?'vertical':'horizontal';
@@ -1950,12 +1952,12 @@
   });
 
   $('room').addEventListener('pointerdown',e=>{
-    if(e.target.closest('.teacher-rotate')) return;
+    if(e.target.closest('.teacher-rotate,.teacher-pen-pot')) return;
     const seat=e.target.closest('.seat'); if(seat){startDrag(e,'seat',seat.dataset.id);return;}
     const desk=e.target.closest('.desk'); if(desk){startDrag(e,'desk');}
   });
   $('room').addEventListener('click',e=>{
-    const rotate=e.target.closest('.teacher-rotate');
+    const rotate=e.target.closest('.teacher-rotate,.teacher-pen-pot');
     if(rotate){e.stopPropagation();rotateTeacherDesk();}
   });
   window.addEventListener('pointermove',moveDrag);
