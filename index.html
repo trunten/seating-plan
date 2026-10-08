@@ -67,6 +67,9 @@
   .btn.danger{color:var(--danger);border-color:#f0b9b4;background:#fff}
   .button-row{display:flex;gap:7px;flex-wrap:wrap}
   .field-row{display:grid;grid-template-columns:1fr auto;gap:7px;align-items:center;margin:8px 0}
+  .room-dimensions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:8px}
+  .room-dimensions label{display:flex;flex-direction:column;gap:5px;font-size:12px;color:#475467;font-weight:700}
+  .room-dimensions .input{min-width:0}
   .input,select{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 9px;background:#fff;color:#101828}
   .check-row{display:flex;align-items:center;gap:8px;margin:7px 0;font-size:13px}
   .muted{color:var(--muted);font-size:12px}
@@ -439,6 +442,11 @@
 
         <div class="section">
           <h2>Room settings</h2>
+          <div class="room-dimensions">
+            <label for="desksPerRow">Desks per row <input class="input" id="desksPerRow" type="number" min="2" max="12" step="1" value="6"></label>
+            <label for="desksPerColumn">Desks per column <input class="input" id="desksPerColumn" type="number" min="2" max="12" step="1" value="7"></label>
+          </div>
+          <p>These control the size and shape of the room, not how many pupil desks are created.</p>
           <label class="muted" for="gridSize">Snap grid</label>
           <select id="gridSize">
             <option value="10">Fine (10)</option>
@@ -517,8 +525,14 @@
 (() => {
   'use strict';
 
-  const ROOM_W = 1200;
-  const ROOM_H = 840;
+  // Each virtual column holds a 170-unit desk plus 30 units of aisle.
+  // Each virtual row holds a 100-unit desk plus 20 units of aisle.
+  let ROOM_W = 1200;
+  let ROOM_H = 840;
+  function setRoomDimensions(columns,rows){
+    ROOM_W=200*columns;
+    ROOM_H=120*rows;
+  }
   const SEAT_W = 170;
   const SEAT_H = 100;
   const DESK_W = 220;
@@ -550,6 +564,8 @@
       displayFields: [],
       showFieldLabels: true,
       gridSize: 20,
+      desksPerRow: 6,
+      desksPerColumn: 7,
       viewMode: 'teacher',
       keyCollapsed: false,
       seats: [],
@@ -675,6 +691,9 @@
     const nameIndex = columns.findIndex(c => c.toLowerCase() === 'name');
     if(nameIndex === -1) columns.unshift('Name');
     else if(columns[nameIndex] !== 'Name') columns[nameIndex] = 'Name';
+    const columnsCount=clamp(Math.round(Number(raw.desksPerRow)||6),2,12);
+    const rowsCount=clamp(Math.round(Number(raw.desksPerColumn)||7),2,12);
+    setRoomDimensions(columnsCount,rowsCount);
     const unique = [];
     const seen = new Set();
     for(const c of columns){
@@ -705,6 +724,8 @@
       displayFields: Array.isArray(raw.displayFields) ? raw.displayFields.filter(f => unique.includes(f) && f !== 'Name') : unique.filter(f => f !== 'Name'),
       showFieldLabels: raw.showFieldLabels !== false,
       gridSize: [10,20,30,40].includes(+raw.gridSize) ? +raw.gridSize : 20,
+      desksPerRow: columnsCount,
+      desksPerColumn: rowsCount,
       viewMode: raw.viewMode === 'pupil' ? 'pupil' : 'teacher',
       keyCollapsed: raw.keyCollapsed === true,
       seats,
@@ -737,6 +758,9 @@
   }
 
   function renderAll(){
+    setRoomDimensions(state.desksPerRow,state.desksPerColumn);
+    $('desksPerRow').value=String(state.desksPerRow);
+    $('desksPerColumn').value=String(state.desksPerColumn);
     $('planName').value = state.title;
     $('roomTitle').textContent = state.title;
     updateDocumentTitle();
@@ -754,6 +778,9 @@
     const enabledRuleIds = new Set(state.rules.filter(r => r.enabled).map(r => r.id));
     activeRuleIds = new Set([...activeRuleIds].filter(id => enabledRuleIds.has(id)));
     const room = $('room');
+    setRoomDimensions(state.desksPerRow,state.desksPerColumn);
+    room.style.aspectRatio=ROOM_W+' / '+ROOM_H;
+    room.style.backgroundSize='calc(100% / '+(ROOM_W/state.gridSize)+') calc(100% / '+(ROOM_H/state.gridSize)+')';
     const isPupil = state.viewMode === 'pupil';
 
     room.classList.toggle('pupil-view',isPupil);
@@ -777,6 +804,8 @@
       el.dataset.id = seat.id;
       el.style.left = (seat.x / ROOM_W * 100) + '%';
       el.style.top = (seat.y / ROOM_H * 100) + '%';
+      el.style.width=(SEAT_W/ROOM_W*100)+'%';
+      el.style.height=(SEAT_H/ROOM_H*100)+'%';
       const colours=pupilPalette[index % pupilPalette.length];
       el.style.setProperty('--desk-color',colours[0]);
       el.style.setProperty('--desk-dark',colours[1]);
@@ -1008,9 +1037,9 @@
   }
 
   function nextSeatPosition(index){
-    const cols = 6;
+    const cols = state.desksPerRow;
     const gapX = 30, gapY = 20;
-    const startX = 20, startY = 80;
+    const startX = 20, startY = 20;
     const x = startX + (index % cols) * (SEAT_W + gapX);
     const y = startY + Math.floor(index / cols) * (SEAT_H + gapY);
     return snapInside('seat',x,y);
@@ -1597,7 +1626,7 @@
     const visual=visualExcelSheet(styles);
     const dataRows=[state.columns, ...state.seats.map(s=>state.columns.map(c=>s.data[c]??''))];
     const layoutRows=[
-      ['Plan name',state.title],['Teacher desk X',state.desk.x],['Teacher desk Y',state.desk.y],['Teacher desk orientation',state.desk.orientation],['Grid size',state.gridSize],[],
+      ['Plan name',state.title],['Teacher desk X',state.desk.x],['Teacher desk Y',state.desk.y],['Teacher desk orientation',state.desk.orientation],['Grid size',state.gridSize],['Desks per row',state.desksPerRow],['Desks per column',state.desksPerColumn],[],
       ['Desk #','X','Y',...state.columns],
       ...state.seats.map((s,i)=>[i+1,s.x,s.y,...state.columns.map(c=>s.data[c]??'')])
     ];
@@ -1684,6 +1713,28 @@
   $('autoArrangeBtn').addEventListener('click',autoArrange);
   $('resetDeskBtn').addEventListener('click',resetDesk);
   $('gridSize').addEventListener('change',e=>{state.gridSize=+e.target.value;renderRoom();queueDraft();});
+  function updateRoomCapacity(){
+    const oldW=ROOM_W,oldH=ROOM_H;
+    const cols=clamp(Math.round(Number($('desksPerRow').value)||6),2,12);
+    const rows=clamp(Math.round(Number($('desksPerColumn').value)||7),2,12);
+    $('desksPerRow').value=cols;
+    $('desksPerColumn').value=rows;
+    if(cols===state.desksPerRow&&rows===state.desksPerColumn)return;
+    state.desksPerRow=cols;
+    state.desksPerColumn=rows;
+    setRoomDimensions(cols,rows);
+    // Scale the layout with the room, preserving relative positions.
+    state.seats.forEach(seat=>{
+      seat.x=snapInside('seat',seat.x/oldW*ROOM_W,seat.y/oldH*ROOM_H).x;
+      seat.y=snapInside('seat',seat.y/oldH*ROOM_H).y;
+    });
+    const pos=snapInside('desk',state.desk.x/oldW*ROOM_W,state.desk.y/oldH*ROOM_H);
+    state.desk.x=pos.x;state.desk.y=pos.y;
+    renderRoom();
+    queueDraft();
+  }
+  $('desksPerRow').addEventListener('change',updateRoomCapacity);
+  $('desksPerColumn').addEventListener('change',updateRoomCapacity);
   $('addFieldBtn').addEventListener('click',()=>addField($('newFieldName').value));
   $('newFieldName').addEventListener('keydown',e=>{if(e.key==='Enter')addField(e.target.value);});
   $('showFieldLabels').addEventListener('change',e=>{state.showFieldLabels=e.target.checked;renderRoom();queueDraft();});
