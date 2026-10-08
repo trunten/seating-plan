@@ -124,6 +124,8 @@
   /* In locked mode, the entire plan is a scroll/pan surface rather than an editor. */
   #room.plan-locked{touch-action:auto;cursor:default}
   #room.plan-locked > *{pointer-events:none}
+  /* The colour key must remain usable for filtering even in read-only mode. */
+  #room.plan-locked > .key{pointer-events:auto}
   #room.plan-locked .seat,#room.plan-locked .desk{touch-action:auto;cursor:default}
   #room.pupil-view{
     background:#f2cd91;
@@ -250,7 +252,8 @@
   #room.pupil-view .teacher-rotate{display:none}
   .teacher-pen-pot{display:none}
   #room.pupil-view .teacher-pen-pot{
-    display:block;position:absolute;right:9px;top:8px;width:20px;height:22px;
+    display:block;position:absolute;right:calc(9px * var(--room-control-scale,1));top:calc(8px * var(--room-control-scale,1));width:20px;height:22px;
+    transform:scale(var(--room-control-scale,1));transform-origin:top right;
     padding:0;cursor:pointer;z-index:5;
     background:#fff;border:2px solid #5d3a23;border-radius:4px 4px 7px 7px;
     box-shadow:inset 0 -4px rgba(89,58,35,.08);
@@ -285,6 +288,10 @@
   .seat-name{font-weight:800;text-align:center;font-size:14px;padding:4px 4px 2px;line-height:1.08;white-space:nowrap;overflow:hidden;flex:0 0 auto;max-height:48%}
   .seat-name.name-wrap{white-space:normal;overflow-wrap:anywhere;text-overflow:clip;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2}
   .seat.empty .seat-name{color:#98a2b3;font-style:italic;font-weight:650}
+  /* If the pupil details are illegible, keep the name prominent instead. */
+  .seat.name-only .seat-name{margin:auto 0;max-height:calc(100% - 8px)}
+  .seat.name-only .seat-fields{display:none}
+  .seat.name-only .colour-band{margin-top:0}
   .seat-fields{padding:0 5px 1px;display:flex;flex-direction:column;justify-content:space-evenly;gap:0;flex:1 1 auto;min-height:0;overflow:hidden}
   .seat-fields.dense-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:minmax(0,1fr);grid-auto-flow:row;column-gap:3px;align-content:stretch}
   .seat-fields.dense-fields .seat-field.field-wide{grid-column:span 2}
@@ -300,7 +307,7 @@
     border-radius:10px;
     box-shadow:0 4px 12px rgba(16,24,40,.18);
     display:flex;align-items:center;justify-content:center;
-    font-size:clamp(11px,1vw,14px);font-weight:800;
+    font-size:var(--teacher-font-size,14px);font-weight:800;
     cursor:grab;letter-spacing:.2px;overflow:visible;
   }
   .desk::before{
@@ -313,12 +320,16 @@
   .teacher-desk-label{pointer-events:none;display:inline-block;white-space:nowrap}
   .desk[data-orientation="vertical"] .teacher-desk-label{transform:rotate(90deg)}
   .teacher-rotate{
-    position:absolute;right:-9px;top:-9px;width:26px;height:26px;padding:0;
+    position:absolute;right:calc(-9px * var(--room-control-scale,1));top:calc(-9px * var(--room-control-scale,1));width:26px;height:26px;padding:0;
+    transform:scale(var(--room-control-scale,1));transform-origin:top right;
     border:1px solid #9fb5d8;border-radius:50%;background:#fff;color:#2457d6;
     display:grid;place-items:center;font-size:16px;font-weight:900;line-height:1;
     box-shadow:0 2px 6px rgba(16,24,40,.18);cursor:pointer;z-index:4;
   }
   .teacher-rotate:hover{background:#eef3ff}
+  /* Below 560px of actual plan width, the controls obstruct the desks. */
+  #room.room-too-small .teacher-rotate,
+  #room.room-too-small.pupil-view .teacher-pen-pot{display:none!important}
   .key{
     position:absolute;left:1.2%;top:1.4%;z-index:5;
     width:max-content;min-width:0;max-width:none;
@@ -934,29 +945,49 @@
   function fitAllSeatContents(){
     const room=$('room');
     if(!room) return;
+    // Measure the room itself, not the viewport: wide classrooms, collapsed
+    // settings panels, browser zoom and orientation changes are all handled.
+    const roomWidth=room.getBoundingClientRect().width;
+    if(!roomWidth) return;
+    const tiny=roomWidth<560;
+    room.classList.toggle('room-too-small',tiny);
+    room.style.setProperty('--room-control-scale',String(clamp(roomWidth/1100,.55,1)));
+    room.style.setProperty('--teacher-font-size',Math.max(7.5,Math.min(14,roomWidth/80)).toFixed(2)+'px');
+    const teacherLabel=room.querySelector('.teacher-desk-label');
+    if(teacherLabel) teacherLabel.textContent=tiny?'Teacher':(state.viewMode==='pupil'?'Teacher':'Teacher desk');
+
     for(const seat of room.querySelectorAll('.seat')){
       const name=seat.querySelector('.seat-name');
       const fields=seat.querySelector('.seat-fields');
       if(!name) continue;
-      // Shrink a single-line name to 8pt before trying a two-line wrap.
+      const bounds=seat.getBoundingClientRect();
+      const seatWidth=bounds.width, seatHeight=bounds.height;
+      if(!seatWidth || !seatHeight) continue;
+      // Names scale down with the actual desk size, including pupil view.
+      const preferredNameSize=Math.min(14,Math.max(8,seatWidth/11.2));
+      const minimumNameSize=Math.min(10.667,Math.max(7.5,preferredNameSize*.80));
       name.classList.remove('name-wrap');
-      const compact=window.matchMedia('(max-width:640px)').matches;
-      const minimum=compact?9:10.667;
-      let size=compact?11:14;
-      name.style.fontSize=size+'px';
-      while(size>minimum && name.scrollWidth>name.clientWidth+1){
-        size=Math.max(minimum,size-.5);
-        name.style.fontSize=size+'px';
+      let size=preferredNameSize;
+      name.style.fontSize=size.toFixed(2)+'px';
+      while(size>minimumNameSize && name.scrollWidth>name.clientWidth+1){
+        size=Math.max(minimumNameSize,size-.5);
+        name.style.fontSize=size.toFixed(2)+'px';
       }
       if(name.scrollWidth>name.clientWidth+1) name.classList.add('name-wrap');
       if(!fields) continue;
       const items=[...fields.children];
       const count=items.length;
-      if(!count) continue;
+      // A sensible minimum for the details is 9px. Below this, a pupil name
+      // alone is far more useful than a jumble of tiny attributes.
+      const targetFieldSize=Math.min(11,seatWidth/12.5);
+      const roomForFields=seatWidth>=112 && seatHeight>=58 && targetFieldSize>=9;
+      seat.classList.toggle('name-only',!count || !roomForFields);
+      if(!count || !roomForFields) continue;
+
       const dense=count>3;
       fields.classList.toggle('dense-fields',dense);
-      // Measure complete field labels, including bold prefixes, without
-      // allowing overflow:hidden or ellipses to distort their natural width.
+      // Recalculate the complete label widths rather than allowing ellipsis
+      // to skew the two-column arrangement.
       const fullTextWidth=field=>{
         const range=document.createRange();
         range.selectNodeContents(field);
@@ -967,15 +998,11 @@
       let rows=count;
       if(dense){
         const half=(fields.clientWidth-3)/2;
-        const full=fields.clientWidth;
         let usedSlots=0;
         for(const field of items){
           field.classList.remove('field-wide');
-          field.style.fontSize=(compact?'9.5':'11')+'px';
-          const width=fullTextWidth(field);
-          // A long value (e.g. Attendance: 93.90%) uses the whole
-          // row; short fields share two columns on surrounding rows.
-          const wide=width>half-2;
+          field.style.fontSize=targetFieldSize.toFixed(2)+'px';
+          const wide=fullTextWidth(field)>half-2;
           field.classList.toggle('field-wide',wide);
           if(wide && usedSlots%2) usedSlots++;
           usedSlots+=wide?2:1;
@@ -986,16 +1013,20 @@
         fields.style.gridTemplateRows='';
         items.forEach(field=>field.classList.remove('field-wide'));
       }
+      // Do not squeeze the rows below their 9px legibility limit.
       const available=fields.clientHeight;
-      const fieldMin=compact?7.5:8.5;
-      const fieldSize=Math.min(compact?9.5:11,Math.max(fieldMin,(available-2)/rows/1.06));
+      const maxRowFont=(available-2)/Math.max(rows,1)/1.06;
+      if(maxRowFont<9){
+        seat.classList.add('name-only');
+        continue;
+      }
+      const fieldSize=Math.min(targetFieldSize,maxRowFont);
       for(const field of items){
         let font=fieldSize;
-        field.style.fontSize=font+'px';
-        // Preserve the whole value wherever a little font adjustment helps.
-        while(font>fieldMin && fullTextWidth(field)>field.clientWidth-1){
-          font=Math.max(fieldMin,font-.5);
-          field.style.fontSize=font+'px';
+        field.style.fontSize=font.toFixed(2)+'px';
+        while(font>9 && fullTextWidth(field)>field.clientWidth-1){
+          font=Math.max(9,font-.5);
+          field.style.fontSize=font.toFixed(2)+'px';
         }
       }
     }
@@ -1985,7 +2016,6 @@
     keyLastPointerType=e.pointerType||'mouse';
   });
   $('keyBox').addEventListener('click',e=>{
-    if(planLocked) return;
     const toggle=e.target.closest('[data-key-toggle]');
     if(toggle){
       e.stopPropagation();
