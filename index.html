@@ -782,6 +782,11 @@
     activeRuleIds = new Set([...activeRuleIds].filter(id => enabledRuleIds.has(id)));
     const room = $('room');
     setRoomDimensions(state.desksPerRow,state.desksPerColumn);
+    const shell=room.closest('.room-shell');
+    if(shell){
+      shell.style.minWidth=Math.max(760,state.desksPerRow*150)+'px';
+      shell.style.maxWidth=Math.max(1220,state.desksPerRow*195)+'px';
+    }
     room.style.aspectRatio=ROOM_W+' / '+ROOM_H;
     room.style.backgroundSize='calc(100% / '+(ROOM_W/state.gridSize)+') calc(100% / '+(ROOM_H/state.gridSize)+')';
     const isPupil = state.viewMode === 'pupil';
@@ -1683,7 +1688,7 @@
     const ruleRows=[['Field','Condition','Value','Colour','Key label','Enabled'],...state.rules.map(r=>[r.field,r.operator,r.value,r.color,ruleLabel(r),r.enabled?'Yes':'No'])];
     const sheets=[
       ['Seating Plan',visual.xml],
-      ['Plan Layout',sheetXml(layoutRows,7,styles)],
+      ['Plan Layout',sheetXml(layoutRows,9,styles)],
       ['Data',sheetXml(dataRows,1,styles)],
       ['Colour Rules',sheetXml(ruleRows,1,styles)]
     ];
