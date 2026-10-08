@@ -252,7 +252,8 @@
   .desk[data-facing="down"]::before{left:12%;right:12%;bottom:-4px;height:5px}
   .desk[data-facing="left"]::before{top:12%;bottom:12%;left:-4px;width:5px}
   .desk[data-facing="right"]::before{top:12%;bottom:12%;right:-4px;width:5px}
-  .teacher-desk-label{pointer-events:none}
+  .teacher-desk-label{pointer-events:none;display:inline-block;white-space:nowrap}
+  .desk[data-orientation="vertical"] .teacher-desk-label{transform:rotate(90deg)}
   .teacher-rotate{
     position:absolute;right:-9px;top:-9px;width:26px;height:26px;padding:0;
     border:1px solid #9fb5d8;border-radius:50%;background:#fff;color:#2457d6;
