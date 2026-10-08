@@ -240,12 +240,15 @@
     cursor:grab;
   }
   .seat.selected{outline:4px solid rgba(36,87,214,.26);outline-offset:2px}
-  .seat-name{font-weight:800;text-align:center;font-size:clamp(10px,1.15vw,15px);padding:7px 6px 4px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .seat-name{font-weight:800;text-align:center;font-size:16px;padding:4px 4px 2px;line-height:1.08;white-space:nowrap;overflow:hidden;flex:0 0 auto;max-height:48%}
+  .seat-name.name-wrap{white-space:normal;overflow-wrap:anywhere;text-overflow:clip;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2}
   .seat.empty .seat-name{color:#98a2b3;font-style:italic;font-weight:650}
-  .seat-fields{padding:0 7px 7px;display:grid;gap:2px;min-height:0;overflow:hidden}
-  .seat-field{font-size:clamp(8px,.85vw,11px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#475467;line-height:1.2}
+  .seat-fields{padding:0 5px 1px;display:flex;flex-direction:column;justify-content:space-evenly;gap:0;flex:1 1 auto;min-height:0;overflow:hidden}
+  .seat-fields.dense-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:minmax(0,1fr);column-gap:3px;align-content:stretch}
+  .seat-field{min-width:0;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#475467;line-height:1.06;flex:0 1 auto}
+  .seat-fields.dense-fields .seat-field{align-self:center}
   .seat-field b{color:#344054}
-  .colour-band{margin-top:auto;height:9px;display:flex;width:100%;background:#f2f4f7}
+  .colour-band{margin-top:auto;height:9px;min-height:7px;flex:0 0 9px;display:flex;width:100%;background:#f2f4f7}
   .colour-segment{height:100%;flex:1}
   .desk{
     background:#26384f;
@@ -817,12 +820,12 @@
         const fields = state.displayFields.filter(f => f !== 'Name' && state.columns.includes(f));
         const body = fields.map(f => {
           const val = seat.data[f] ?? '';
-          return `<div class="seat-field">${state.showFieldLabels ? `<b>${escHtml(f)}:</b> ` : ''}${escHtml(val)}</div>`;
+          return `<div class="seat-field" title="${escHtml(f+': '+val)}">${state.showFieldLabels ? `<b>${escHtml(f)}:</b> ` : ''}${escHtml(val)}</div>`;
         }).join('');
         const band = matches.length
           ? matches.map(r => `<div class="colour-segment" style="background:${escHtml(r.color)}" title="${escHtml(ruleLabel(r))}"></div>`).join('')
           : '<div class="colour-segment" style="background:#e4e7ec"></div>';
-        el.innerHTML = `<div class="seat-name">${escHtml(name || 'Empty desk')}</div><div class="seat-fields">${body}</div><div class="colour-band">${band}</div>`;
+        el.innerHTML = `<div class="seat-name" title="${escHtml(name||'Empty desk')}">${escHtml(name || 'Empty desk')}</div><div class="seat-fields${fields.length>6?' dense-fields':''}">${body}</div><div class="colour-band">${band}</div>`;
       }
       room.appendChild(el);
     });
@@ -839,6 +842,40 @@
       ? '<span class="teacher-desk-label">Teacher</span><span class="teacher-pen-pot" aria-hidden="true"></span>'
       : '<span class="teacher-desk-label">Teacher desk</span><button class="teacher-rotate" type="button" title="Rotate teacher desk 90°" aria-label="Rotate teacher desk 90 degrees">↻</button>';
     updatePupilDecorVisibility();
+    requestAnimationFrame(fitAllSeatContents);
+  }
+
+  function fitAllSeatContents(){
+    const room=$('room');
+    if(!room || state.viewMode==='pupil') return;
+    for(const seat of room.querySelectorAll('.seat')){
+      const name=seat.querySelector('.seat-name');
+      const fields=seat.querySelector('.seat-fields');
+      if(!name || !fields) continue;
+      // Start at a comfortable size, shrink names to fit, and wrap at 8pt.
+      name.classList.remove('name-wrap');
+      let size=16;
+      name.style.fontSize=size+'px';
+      while(size>10.667 && name.scrollWidth>name.clientWidth+1){
+        size=Math.max(10.667,size-.5);
+        name.style.fontSize=size+'px';
+      }
+      if(name.scrollWidth>name.clientWidth+1) name.classList.add('name-wrap');
+      // The available height changes with room proportions and wrapped names.
+      // Five or six fields fit in a single compact column; 7+ use two columns.
+      const count=fields.children.length;
+      if(!count) continue;
+      const rows=count>6?Math.ceil(count/2):count;
+      const available=fields.clientHeight;
+      const fieldSize=Math.min(11,Math.max(8.5,(available-2)/rows/1.06));
+      for(const field of fields.children) field.style.fontSize=fieldSize+'px';
+    }
+  }
+  if(typeof ResizeObserver!=='undefined'){
+    const seatResizeObserver=new ResizeObserver(()=>fitAllSeatContents());
+    seatResizeObserver.observe($('room'));
+  }else{
+    window.addEventListener('resize',fitAllSeatContents);
   }
 
   function updatePupilDecorVisibility(){
@@ -1446,11 +1483,11 @@
       if(!borderCache.has(mask)){borderCache.set(mask,borders.length);borders.push(mask);}
       return borderCache.get(mask);
     }
-    function style({size=10,fg='#24334B',bold=false,bg=null,edge=0,align='center',rotate=0,wrap=true}={}){
-      const k=[size,color(fg),bold,color(bg),bg?1:0,edge,align,rotate,wrap].join('|');
+    function style({size=10,fg='#24334B',bold=false,bg=null,edge=0,align='center',rotate=0,wrap=true,shrink=false}={}){
+      const k=[size,color(fg),bold,color(bg),bg?1:0,edge,align,rotate,wrap,shrink].join('|');
       if(!styleCache.has(k)){
         const id=xfs.length;
-        xfs.push({fontId:font(size,fg,bold),fillId:fill(bg),borderId:border(edge),align,rotate,wrap});
+        xfs.push({fontId:font(size,fg,bold),fillId:fill(bg),borderId:border(edge),align,rotate,wrap,shrink});
         styleCache.set(k,id);
       }
       return styleCache.get(k);
@@ -1466,7 +1503,7 @@
         '<fills count="'+fills.length+'">'+fills.map((f,i)=>i===0?'<fill><patternFill patternType="none"/></fill>':i===1?'<fill><patternFill patternType="gray125"/></fill>':'<fill><patternFill patternType="solid"><fgColor rgb="'+f+'"/><bgColor indexed="64"/></patternFill></fill>').join('')+'</fills>'+
         '<borders count="'+borders.length+'">'+borders.map(m=>'<border>'+edge(m,1,'left')+edge(m,2,'right')+edge(m,4,'top')+edge(m,8,'bottom')+'<diagonal/></border>').join('')+'</borders>'+
         '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'+
-        '<cellXfs count="'+xfs.length+'">'+xfs.map(x=>'<xf numFmtId="0" fontId="'+x.fontId+'" fillId="'+x.fillId+'" borderId="'+x.borderId+'" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="'+x.align+'" vertical="center"'+(x.rotate?' textRotation="'+x.rotate+'"':'')+(x.wrap?' wrapText="1"':'')+'/></xf>').join('')+'</cellXfs>'+
+        '<cellXfs count="'+xfs.length+'">'+xfs.map(x=>'<xf numFmtId="0" fontId="'+x.fontId+'" fillId="'+x.fillId+'" borderId="'+x.borderId+'" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="'+x.align+'" vertical="center"'+(x.rotate?' textRotation="'+x.rotate+'"':'')+(x.wrap?' wrapText="1"':'')+(x.shrink?' shrinkToFit="1"':'')+'/></xf>').join('')+'</cellXfs>'+
         '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
     }
     return {style,xml};
@@ -1546,8 +1583,21 @@
       const details=fields.map(f=>(state.showFieldLabels?f+': ':'')+String(seat.data[f]??'')).join('\n');
       paint(x,y,right,bottom,{bg:'#F8FAFC',outline:true});
       merge(x,y,right,y+4,name,{size:12,fg:'#26384F',bold:true,bg:'#E9F0FF',outline:true});
-      merge(x,y+5,right,bottom-2,details,
-        {size:fields.length>7?7:fields.length>4?9:11,fg:'#344054',bg:'#F8FAFC',outline:true});
+      // Keep every field on its own line. Excel uses 10pt and shrink-to-fit
+      // horizontally instead of wrapping long values over other fields.
+      const bodyTop=y+5,bodyBottom=bottom-2,bodyHeight=bodyBottom-bodyTop+1;
+      if(fields.length){
+        fields.forEach((field,i)=>{
+          const top=bodyTop+Math.floor(i*bodyHeight/fields.length);
+          const end=bodyTop+Math.floor((i+1)*bodyHeight/fields.length)-1;
+          if(top>end) return;
+          const label=(state.showFieldLabels?field+': ':'')+String(seat.data[field]??'');
+          merge(x,top,right,end,label,
+            {size:10,fg:'#344054',bg:'#F8FAFC',align:'left',wrap:false,shrink:true});
+        });
+      }else{
+        merge(x,bodyTop,right,bodyBottom,'',{size:10,bg:'#F8FAFC'});
+      }
       const matched=matchingRules(seat);
       const colours=matched.length?matched.map(r=>r.color):['#E4E7EC'];
       // Each segment is almost exactly equal (maximum one grid column difference).
@@ -1600,7 +1650,7 @@
       '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>'+
       '<dimension ref="A1:'+colLetter(LAST_COL)+LAST_ROW+'"/>'+
       '<sheetViews><sheetView workbookViewId="0" showGridLines="0"/></sheetViews>'+
-      '<sheetFormatPr defaultRowHeight="4.3" customHeight="1"/>'+
+      '<sheetFormatPr defaultRowHeight="5.5" customHeight="1"/>'+
       '<cols><col min="1" max="'+LAST_COL+'" width="0.55" customWidth="1"/></cols><sheetData>';
     for(const row of allRows){
       xml+='<row r="'+row+'">';
