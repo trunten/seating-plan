@@ -602,13 +602,13 @@
     let changed=false;
     // Keep the teacher desk within the snap grid. Student desks treat it as a fixed obstacle.
     const teacher=snapInside('desk',state.desk.x,state.desk.y);
-    if(teacher.x!==state.desk.x || teacher.y!==state.desk.y){ state.desk=teacher; changed=true; }
+    if(teacher.x!==state.desk.x || teacher.y!==state.desk.y){ state.desk={...state.desk,...teacher}; changed=true; }
     // If the teacher desk itself is under the key, move it to the nearest valid space first.
     const key=keyObstacle();
     const td=teacherDeskSize();
     if(key && rectsOverlap({x:state.desk.x,y:state.desk.y,w:td.w,h:td.h},key,KEY_GAP)){
       const p=nearestAvailablePosition('desk',null,state.desk.x,state.desk.y);
-      if(p){ state.desk=p; changed=true; }
+      if(p){ state.desk={...state.desk,...p}; changed=true; }
     }
     for(const s of state.seats){
       const snapped=snapInside('seat',s.x,s.y);
@@ -1272,7 +1272,7 @@
     const finished=drag;
     if(finished.type==='desk'){
       const p=nearestAvailablePosition('desk',null,state.desk.x,state.desk.y);
-      state.desk=p || {x:finished.origX,y:finished.origY};
+      state.desk=p ? {...state.desk,...p} : {...state.desk,x:finished.origX,y:finished.origY};
     }else{
       const s=state.seats.find(s=>s.id===finished.id);
       if(s){
