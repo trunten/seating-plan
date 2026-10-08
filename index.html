@@ -1355,22 +1355,202 @@
     for(const c of chunks){out.set(c,p);p+=c.length;} for(const c of central){out.set(c,p);p+=c.length;} out.set(end,p); return out;
   }
   function colLetter(n){ let s=''; while(n>0){n--;s=String.fromCharCode(65+(n%26))+s;n=Math.floor(n/26);} return s; }
-  function sheetXml(rows){
-    let xml='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>';
+
+  // Compact Open XML styles. Keeping this native avoids external scripts or CDNs.
+  function makeExcelStyles(){
+    const fonts=[],fills=[null,'gray125'],borders=[0],xfs=[];
+    const fontCache=new Map(),fillCache=new Map(),borderCache=new Map(),styleCache=new Map();
+    const color = value => {
+      let c=String(value||'').replace(/^#/,'').toUpperCase();
+      if(/^[0-9A-F]{3}$/.test(c)) c=c.split('').map(x=>x+x).join('');
+      return /^[0-9A-F]{6}$/.test(c) ? 'FF'+c : 'FFE4E7EC';
+    };
+    function font(size=10,fg='#24334B',bold=false){
+      const k=[size,color(fg),bold].join(':');
+      if(!fontCache.has(k)){fontCache.set(k,fonts.length);fonts.push({size,fg:color(fg),bold});}
+      return fontCache.get(k);
+    }
+    function fill(bg){
+      if(!bg) return 0;
+      const k=color(bg);
+      if(!fillCache.has(k)){fillCache.set(k,fills.length);fills.push(k);}
+      return fillCache.get(k);
+    }
+    function border(mask=0){
+      if(!mask) return 0;
+      if(!borderCache.has(mask)){borderCache.set(mask,borders.length);borders.push(mask);}
+      return borderCache.get(mask);
+    }
+    function style({size=10,fg='#24334B',bold=false,bg=null,edge=0,align='center',rotate=0,wrap=true}={}){
+      const k=[size,color(fg),bold,color(bg),bg?1:0,edge,align,rotate,wrap].join('|');
+      if(!styleCache.has(k)){
+        const id=xfs.length;
+        xfs.push({fontId:font(size,fg,bold),fillId:fill(bg),borderId:border(edge),align,rotate,wrap});
+        styleCache.set(k,id);
+      }
+      return styleCache.get(k);
+    }
+    style(); // style 0 is the normal cell style.
+    function xml(){
+      const edge = (mask,bit,name) => (mask & bit)
+        ? '<'+name+' style="thin"><color rgb="FFADB8C8"/></'+name+'>'
+        : '<'+name+'/>';
+      return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+        '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'+
+        '<fonts count="'+fonts.length+'">'+fonts.map(f=>'<font><sz val="'+f.size+'"/><color rgb="'+f.fg+'"/><name val="Aptos"/>'+(f.bold?'<b/>':'')+'</font>').join('')+'</fonts>'+
+        '<fills count="'+fills.length+'">'+fills.map((f,i)=>i===0?'<fill><patternFill patternType="none"/></fill>':i===1?'<fill><patternFill patternType="gray125"/></fill>':'<fill><patternFill patternType="solid"><fgColor rgb="'+f+'"/><bgColor indexed="64"/></patternFill></fill>').join('')+'</fills>'+
+        '<borders count="'+borders.length+'">'+borders.map(m=>'<border>'+edge(m,1,'left')+edge(m,2,'right')+edge(m,4,'top')+edge(m,8,'bottom')+'<diagonal/></border>').join('')+'</borders>'+
+        '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'+
+        '<cellXfs count="'+xfs.length+'">'+xfs.map(x=>'<xf numFmtId="0" fontId="'+x.fontId+'" fillId="'+x.fillId+'" borderId="'+x.borderId+'" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="'+x.align+'" vertical="center"'+(x.rotate?' textRotation="'+x.rotate+'"':'')+(x.wrap?' wrapText="1"':'')+'/></xf>').join('')+'</cellXfs>'+
+        '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
+    }
+    return {style,xml};
+  }
+
+  function excelText(value){
+    return escXml(String(value??'').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,''));
+  }
+  function excelCell(ref,value,styleId=0){
+    if(value===undefined || value===null || value==='') return '<c r="'+ref+'" s="'+styleId+'"/>';
+    if(typeof value==='number' && Number.isFinite(value))
+      return '<c r="'+ref+'" s="'+styleId+'"><v>'+value+'</v></c>';
+    return '<c r="'+ref+'" s="'+styleId+'" t="inlineStr"><is><t xml:space="preserve">'+excelText(value)+'</t></is></c>';
+  }
+
+  function sheetXml(rows,headerRow,styles){
+    let xml='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0" showGridLines="0"/></sheetViews>';
+    const width=Math.max(1,...rows.map(r=>r.length));
+    xml+='<cols><col min="1" max="'+width+'" width="20" customWidth="1"/></cols><sheetData>';
     rows.forEach((row,ri)=>{
-      xml+=`<row r="${ri+1}">`;
+      xml+='<row r="'+(ri+1)+'">';
       row.forEach((v,ci)=>{
-        if(v===undefined||v===null)return;
-        const ref=colLetter(ci+1)+(ri+1);
-        if(typeof v==='number' && Number.isFinite(v)) xml+=`<c r="${ref}"><v>${v}</v></c>`;
-        else xml+=`<c r="${ref}" t="inlineStr"><is><t xml:space="preserve">${escXml(v)}</t></is></c>`;
+        if(v===undefined || v===null) return;
+        xml+=excelCell(colLetter(ci+1)+(ri+1),v,ri+1===headerRow?styles.style({size:10,fg:'#FFFFFF',bg:'#26384F',bold:true}):0);
       });
       xml+='</row>';
     });
     return xml+'</sheetData></worksheet>';
   }
+
+  // A five-unit grid makes each pupil desk 34 Excel columns wide. Each
+  // matching rule receives a proportional, independently editable colour strip.
+  function visualExcelSheet(styles){
+    const UNIT=5, ROOM_COL=2, ROOM_ROW=10, ROOM_COLS=ROOM_W/UNIT, ROOM_ROWS=ROOM_H/UNIT;
+    const KEY_COL=ROOM_COL+ROOM_COLS+5, LAST_COL=KEY_COL+47, LAST_ROW=ROOM_ROW+ROOM_ROWS-1;
+    const cells=new Map(),merges=[];
+    function put(row,col,value,styleId){
+      if(row<1||col<1) return;
+      let r=cells.get(row);if(!r){r=new Map();cells.set(row,r);}
+      r.set(col,{value,styleId});
+    }
+    function paint(c1,r1,c2,r2,options={}){
+      for(let row=r1;row<=r2;row++){
+        for(let col=c1;col<=c2;col++){
+          const edge=(col===c1?1:0)|(col===c2?2:0)|(row===r1?4:0)|(row===r2?8:0);
+          put(row,col,undefined,styles.style({...options,edge:options.outline?edge:0}));
+        }
+      }
+    }
+    function merge(c1,r1,c2,r2,value,options={}){
+      paint(c1,r1,c2,r2,options);
+      if(c1!==c2||r1!==r2) merges.push(colLetter(c1)+r1+':'+colLetter(c2)+r2);
+      put(r1,c1,value,styles.style({...options,edge:options.outline?5:0}));
+    }
+    // Header and boundary of the room. Nothing here depends on the active view or filter.
+    merge(ROOM_COL,2,LAST_COL,6,state.title||'Untitled seating plan',
+      {size:19,fg:'#26384F',bold:true,bg:'#E9F0FF',align:'left'});
+    merge(ROOM_COL,7,LAST_COL,8,'TEACHER VIEW  •  '+state.seats.length+' desks  •  '+state.displayFields.length+' additional fields',
+      {size:10,fg:'#667085',align:'left'});
+    for(let x=0;x<ROOM_COLS;x++){
+      put(ROOM_ROW,ROOM_COL+x,undefined,styles.style({edge:4}));
+      put(LAST_ROW,ROOM_COL+x,undefined,styles.style({edge:8}));
+    }
+    for(let y=0;y<ROOM_ROWS;y++){
+      put(ROOM_ROW+y,ROOM_COL,undefined,styles.style({edge:1}));
+      put(ROOM_ROW+y,ROOM_COL+ROOM_COLS-1,undefined,styles.style({edge:2}));
+    }
+
+    const seatWidth=Math.round(SEAT_W/UNIT),seatHeight=Math.round(SEAT_H/UNIT);
+    state.seats.forEach(seat=>{
+      const x=ROOM_COL+Math.round(seat.x/UNIT), y=ROOM_ROW+Math.round(seat.y/UNIT);
+      const right=x+seatWidth-1,bottom=y+seatHeight-1;
+      const name=String(seat.data.Name||'').trim()||'Empty desk';
+      const fields=state.displayFields.filter(f=>f!=='Name'&&state.columns.includes(f));
+      const details=fields.map(f=>(state.showFieldLabels?f+': ':'')+String(seat.data[f]??'')).join('\n');
+      paint(x,y,right,bottom,{bg:'#F8FAFC',outline:true});
+      merge(x,y,right,y+4,name,{size:12,fg:'#26384F',bold:true,bg:'#E9F0FF',outline:true});
+      merge(x,y+5,right,bottom-2,details,
+        {size:fields.length>7?7:fields.length>4?9:11,fg:'#344054',bg:'#F8FAFC',outline:true});
+      const matched=matchingRules(seat);
+      const colours=matched.length?matched.map(r=>r.color):['#E4E7EC'];
+      // Each segment is almost exactly equal (maximum one grid column difference).
+      const segments=Math.min(colours.length,seatWidth);
+      for(let i=0;i<segments;i++){
+        const left=x+Math.floor(i*seatWidth/segments);
+        const end=x+Math.floor((i+1)*seatWidth/segments)-1;
+        paint(left,bottom-1,end,bottom,{bg:colours[i],outline:true});
+      }
+    });
+
+    // The teacher desk is drawn at its real saved coordinates. Vertical
+    // orientation rotates the editable cell text, not just the outline.
+    const teacherSize=teacherDeskSize();
+    const tx=ROOM_COL+Math.round(state.desk.x/UNIT);
+    const ty=ROOM_ROW+Math.round(state.desk.y/UNIT);
+    const tr=tx+Math.round(teacherSize.w/UNIT)-1;
+    const tb=ty+Math.round(teacherSize.h/UNIT)-1;
+    merge(tx,ty,tr,tb,'Teacher desk',
+      {size:13,fg:'#FFFFFF',bold:true,bg:'#26384F',rotate:state.desk.orientation==='vertical'?90:0,outline:true});
+
+    // The key occupies a dedicated strip beside the plan, so it cannot hide
+    // any desks, even when the browser key is expanded over the room.
+    merge(KEY_COL,ROOM_ROW+2,LAST_COL-1,ROOM_ROW+9,'KEY',
+      {size:14,fg:'#26384F',bold:true,bg:'#E9F0FF',align:'left'});
+    const rules=state.rules.filter(r=>r.enabled);
+    if(!rules.length){
+      merge(KEY_COL+2,ROOM_ROW+15,LAST_COL-2,ROOM_ROW+20,'No colour rules',
+        {size:10,fg:'#98A2B3',align:'left'});
+    }else{
+      const step=Math.max(1,Math.min(9,Math.floor((ROOM_ROWS-20)/rules.length)));
+      rules.forEach((rule,i)=>{
+        const top=ROOM_ROW+15+i*step;
+        const bottom=top+Math.max(0,step-2);
+        paint(KEY_COL+2,top,KEY_COL+7,bottom,{bg:rule.color});
+        merge(KEY_COL+10,top,LAST_COL-2,bottom,ruleLabel(rule),
+          {size:step<4?8:11,fg:'#344054',align:'left',wrap:false});
+      });
+    }
+
+    const allRows=[...cells.keys()].sort((a,b)=>a-b);
+    let xml='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+      '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'+
+      '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>'+
+      '<dimension ref="A1:'+colLetter(LAST_COL)+LAST_ROW+'"/>'+
+      '<sheetViews><sheetView workbookViewId="0" showGridLines="0"/></sheetViews>'+
+      '<sheetFormatPr defaultRowHeight="4.3" customHeight="1"/>'+
+      '<cols><col min="1" max="'+LAST_COL+'" width="0.55" customWidth="1"/></cols><sheetData>';
+    for(const row of allRows){
+      xml+='<row r="'+row+'">';
+      const columns=[...cells.get(row).keys()].sort((a,b)=>a-b);
+      for(const col of columns){
+        const c=cells.get(row).get(col);
+        xml+=excelCell(colLetter(col)+row,c.value,c.styleId);
+      }
+      xml+='</row>';
+    }
+    xml+='</sheetData>';
+    xml+='<mergeCells count="'+merges.length+'">'+merges.map(m=>'<mergeCell ref="'+m+'"/>').join('')+'</mergeCells>';
+    xml+='<printOptions horizontalCentered="1" verticalCentered="1"/>'+
+      '<pageMargins left="0.15" right="0.15" top="0.2" bottom="0.2" header="0" footer="0"/>'+
+      '<pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="1"/>'+
+      '</worksheet>';
+    return {xml,lastCol:LAST_COL,lastRow:LAST_ROW};
+  }
+
   function exportExcel(){
     state.title=$('planName').value.trim()||state.title;
+    const styles=makeExcelStyles();
+    const visual=visualExcelSheet(styles);
     const dataRows=[state.columns, ...state.seats.map(s=>state.columns.map(c=>s.data[c]??''))];
     const layoutRows=[
       ['Plan name',state.title],['Teacher desk X',state.desk.x],['Teacher desk Y',state.desk.y],['Teacher desk orientation',state.desk.orientation],['Grid size',state.gridSize],[],
@@ -1378,22 +1558,52 @@
       ...state.seats.map((s,i)=>[i+1,s.x,s.y,...state.columns.map(c=>s.data[c]??'')])
     ];
     const ruleRows=[['Field','Condition','Value','Colour','Key label','Enabled'],...state.rules.map(r=>[r.field,r.operator,r.value,r.color,ruleLabel(r),r.enabled?'Yes':'No'])];
-    const sheets=[['Plan Layout',layoutRows],['Data',dataRows],['Colour Rules',ruleRows]];
-    const contentTypes=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>${sheets.map((s,i)=>`<Override PartName="/xl/worksheets/sheet${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('')}<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/></Types>`;
-    const rootRels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/></Relationships>`;
-    const workbook=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${sheets.map((s,i)=>`<sheet name="${escXml(s[0])}" sheetId="${i+1}" r:id="rId${i+1}"/>`).join('')}</sheets></workbook>`;
-    const wbRels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${sheets.map((s,i)=>`<Relationship Id="rId${i+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i+1}.xml"/>`).join('')}</Relationships>`;
+    const sheets=[
+      ['Seating Plan',visual.xml],
+      ['Plan Layout',sheetXml(layoutRows,7,styles)],
+      ['Data',sheetXml(dataRows,1,styles)],
+      ['Colour Rules',sheetXml(ruleRows,1,styles)]
+    ];
+    const contentTypes='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+      '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'+
+      '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'+
+      '<Default Extension="xml" ContentType="application/xml"/>'+
+      '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'+
+      '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'+
+      sheets.map((item,i)=>'<Override PartName="/xl/worksheets/sheet'+(i+1)+'.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>').join('')+
+      '<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>'+
+      '<Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/></Types>';
+    const rootRels='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+
+      '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>'+
+      '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/>'+
+      '<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/></Relationships>';
+    const workbook='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+      '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'+
+      '<sheets>'+sheets.map((item,i)=>'<sheet name="'+excelText(item[0])+'" sheetId="'+(i+1)+'" r:id="rId'+(i+1)+'"/>').join('')+'</sheets>'+
+      '<definedNames><definedName name="_xlnm.Print_Area" localSheetId="0">'+
+      "'Seating Plan'!$A$1:$"+colLetter(visual.lastCol)+'$'+visual.lastRow+
+      '</definedName></definedNames></workbook>';
+    const wbRels='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+
+      sheets.map((item,i)=>'<Relationship Id="rId'+(i+1)+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet'+(i+1)+'.xml"/>').join('')+
+      '<Relationship Id="rId'+(sheets.length+1)+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>'+
+      '</Relationships>';
     const now=new Date().toISOString();
-    const core=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>${escXml(state.title)}</dc:title><dc:creator>DeskBuddy</dc:creator><dcterms:created xsi:type="dcterms:W3CDTF">${now}</dcterms:created></cp:coreProperties>`;
-    const app=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"><Application>DeskBuddy</Application></Properties>`;
+    const core='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>'+excelText(state.title)+'</dc:title><dc:creator>DeskBuddy</dc:creator><dcterms:created xsi:type="dcterms:W3CDTF">'+now+'</dcterms:created></cp:coreProperties>';
+    const app='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"><Application>DeskBuddy</Application></Properties>';
     const files=[
-      {name:'[Content_Types].xml',data:contentTypes},{name:'_rels/.rels',data:rootRels},{name:'xl/workbook.xml',data:workbook},{name:'xl/_rels/workbook.xml.rels',data:wbRels},{name:'docProps/core.xml',data:core},{name:'docProps/app.xml',data:app},
-      ...sheets.map((s,i)=>({name:`xl/worksheets/sheet${i+1}.xml`,data:sheetXml(s[1])}))
+      {name:'[Content_Types].xml',data:contentTypes},{name:'_rels/.rels',data:rootRels},
+      {name:'xl/workbook.xml',data:workbook},{name:'xl/_rels/workbook.xml.rels',data:wbRels},
+      {name:'xl/styles.xml',data:styles.xml()},
+      {name:'docProps/core.xml',data:core},{name:'docProps/app.xml',data:app},
+      ...sheets.map((item,i)=>({name:'xl/worksheets/sheet'+(i+1)+'.xml',data:item[1]}))
     ];
     const zip=zipStore(files);
     downloadBlob(new Blob([zip],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),safeFilename(state.title)+'.xlsx');
-    toast('Excel workbook exported');
+    toast('Excel seating plan exported');
   }
+
 
   function setSettingsHidden(hidden){
     const workspace=document.querySelector('.workspace');
